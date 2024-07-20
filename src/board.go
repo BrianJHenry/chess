@@ -3,7 +3,7 @@ package chess
 type Board [8][8]Piece
 
 type Position struct {
-	X, Y int8
+	X, Y uint8
 }
 
 func InitialPosition() *Board {
