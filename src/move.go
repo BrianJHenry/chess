@@ -8,9 +8,9 @@ type MoveFlag uint8
 
 const (
 	None MoveFlag = iota
-	DoublePawnPush
 	EnPassant
-	Castle
+	KingSideCastle
+	QueenSideCastle
 	PromoteToQueen
 	PromoteToRook
 	PromoteToBishop

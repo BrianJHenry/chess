@@ -45,9 +45,9 @@ func retrieveTestData() []testData {
 			move: Move{
 				Start: Position{X: 7, Y: 3},
 				End:   Position{X: 7, Y: 1},
-				Flag:  Castle,
+				Flag:  KingSideCastle,
 			},
-			encoded: 0b0011001111011111,
+			encoded: 0b0010001111011111,
 		},
 		// TODO: better coverage
 	}

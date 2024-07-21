@@ -21,9 +21,49 @@ func InitialPosition() *Board {
 	}
 }
 
-// TODO
+// Update board for move
 func (board Board) ExecuteMove(move Move) Board {
-	return Board{}
+	piece := board[move.Start.X][move.Start.Y]
+
+	switch move.Flag {
+	case None:
+		board[move.Start.X][move.Start.Y] = EmptySquare
+		board[move.End.X][move.End.Y] = piece
+	case EnPassant:
+		board[move.Start.X][move.Start.Y] = EmptySquare
+		board[move.End.X][move.Start.Y] = EmptySquare
+		board[move.End.X][move.End.Y] = piece
+	case QueenSideCastle:
+		queenSideRook := getRookColorForKing(piece)
+		board[4][move.Start.Y] = EmptySquare
+		board[3][move.Start.Y] = queenSideRook
+		board[2][move.Start.Y] = piece
+		board[0][move.Start.Y] = EmptySquare
+	case KingSideCastle:
+		kingSideRook := getRookColorForKing(piece)
+		board[4][move.Start.Y] = EmptySquare
+		board[5][move.Start.Y] = kingSideRook
+		board[6][move.Start.Y] = piece
+		board[7][move.Start.Y] = EmptySquare
+	case PromoteToQueen:
+		queen := getQueenColorForPawn(piece)
+		board[move.Start.X][move.Start.Y] = EmptySquare
+		board[move.End.X][move.End.Y] = queen
+	case PromoteToRook:
+		rook := getRookColorForPawn(piece)
+		board[move.Start.X][move.Start.Y] = EmptySquare
+		board[move.End.X][move.End.Y] = rook
+	case PromoteToBishop:
+		bishop := getBishopColorForPawn(piece)
+		board[move.Start.X][move.Start.Y] = EmptySquare
+		board[move.End.X][move.End.Y] = bishop
+	case PromoteToKnight:
+		knight := getKnightColorForPawn(piece)
+		board[move.Start.X][move.Start.Y] = EmptySquare
+		board[move.End.X][move.End.Y] = knight
+	}
+
+	return board
 }
 
 func (board Board) GetSquare(position Position) Piece {
@@ -48,7 +88,7 @@ func (board Board) FindKing(color Turn) (kingPosition Position, err error) {
 		}
 	}
 
-	return Position{}, errors.New("Missing king")
+	return Position{}, errors.New("missing king")
 }
 
 func (board Board) IsInCheck(color Turn) (bool, error) {

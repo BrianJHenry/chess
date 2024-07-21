@@ -111,7 +111,7 @@ func GenerateKingMoves(state State, position Position) (moves []Move) {
 			moves = append(moves, Move{
 				position,
 				kingSidePositionFinish,
-				Castle,
+				KingSideCastle,
 			})
 		}
 
@@ -129,7 +129,7 @@ func GenerateKingMoves(state State, position Position) (moves []Move) {
 			moves = append(moves, Move{
 				position,
 				Position{X: 5, Y: 7},
-				Castle,
+				QueenSideCastle,
 			})
 		}
 	} else {
@@ -146,7 +146,7 @@ func GenerateKingMoves(state State, position Position) (moves []Move) {
 			moves = append(moves, Move{
 				position,
 				kingSidePositionFinish,
-				Castle,
+				KingSideCastle,
 			})
 		}
 
@@ -164,7 +164,7 @@ func GenerateKingMoves(state State, position Position) (moves []Move) {
 			moves = append(moves, Move{
 				position,
 				Position{X: 5, Y: 0},
-				Castle,
+				QueenSideCastle,
 			})
 		}
 	}
@@ -263,7 +263,7 @@ func GeneratePawnMoves(state State, position, kingPosition Position) (moves []Mo
 				move = Move{
 					position,
 					doublePushPosition,
-					DoublePawnPush,
+					None,
 				}
 
 				if !checkIllegalMove(move) {
@@ -294,7 +294,11 @@ func GeneratePawnMoves(state State, position, kingPosition Position) (moves []Mo
 
 	// En Passant
 	previousMove := state.Previous.DecodeMove()
-	if previousMove.Flag == DoublePawnPush && position.Y == previousMove.End.Y &&
+	previousMovePiece := state.Board.GetSquare(previousMove.End)
+	previousDoublePawnPush := (previousMovePiece == BlackPawn && previousMove.Start.Y == 6 && previousMove.End.Y == 4) ||
+		(previousMovePiece == WhitePawn && previousMove.Start.Y == 1 && previousMove.End.Y == 3)
+
+	if previousDoublePawnPush && position.Y == previousMove.End.Y &&
 		(position.X+1 == previousMove.End.X || position.X-1 == previousMove.End.X) {
 
 		move = Move{
