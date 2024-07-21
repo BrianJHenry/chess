@@ -1,5 +1,9 @@
 package chess
 
+/*
+Move types
+*/
+
 type MoveFlag uint8
 
 const (
@@ -33,12 +37,16 @@ type MoveWithInfo struct {
 	Captured Piece
 }
 
+/*
+Functions to translate between move types
+*/
+
 func (move Move) EncodeMove(board *Board) (encoded EncodedMove) {
 	encoded = 0
-	encoded |= EncodedMove((threeBitMask & move.Start.X))
-	encoded |= EncodedMove((threeBitMask & move.Start.Y)) << 3
-	encoded |= EncodedMove((threeBitMask & move.End.X)) << 6
-	encoded |= EncodedMove((threeBitMask & move.End.Y)) << 9
+	encoded |= EncodedMove((threeBitMask & uint8(move.Start.X)))
+	encoded |= EncodedMove((threeBitMask & uint8(move.Start.Y))) << 3
+	encoded |= EncodedMove((threeBitMask & uint8(move.End.X))) << 6
+	encoded |= EncodedMove((threeBitMask & uint8(move.End.Y))) << 9
 	encoded |= EncodedMove((fourBitMask & uint8(move.Flag))) << 12
 	return
 }
@@ -60,10 +68,10 @@ func (notated NotatedMove) DenotateMove(board *Board) (move Move) {
 
 func (encoded EncodedMove) DecodeMove(board *Board) (move Move) {
 	move = Move{}
-	move.Start.X = uint8(encoded & EncodedMove(threeBitMask))
-	move.Start.Y = uint8(encoded & (EncodedMove(threeBitMask) << 3) >> 3)
-	move.End.X = uint8(encoded & (EncodedMove(threeBitMask) << 6) >> 6)
-	move.End.Y = uint8(encoded & (EncodedMove(threeBitMask) << 9) >> 9)
+	move.Start.X = int8(encoded & EncodedMove(threeBitMask))
+	move.Start.Y = int8(encoded & (EncodedMove(threeBitMask) << 3) >> 3)
+	move.End.X = int8(encoded & (EncodedMove(threeBitMask) << 6) >> 6)
+	move.End.Y = int8(encoded & (EncodedMove(threeBitMask) << 9) >> 9)
 	move.Flag = MoveFlag(encoded & (EncodedMove(threeBitMask) << 12) >> 12)
 	return
 }

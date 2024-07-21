@@ -2,16 +2,17 @@ package chess
 
 type Turn bool
 
-// TODO: Does this actually make sense
 const (
-	White Turn = false
-	Black Turn = true
+	WhiteTurn Turn = false
+	BlackTurn Turn = true
 )
 
 type State struct {
-	Board        Board
-	WhiteCastled bool
-	BlackCastled bool
-	Turn         bool
-	Previous     EncodedMove
+	Board                   Board
+	WhiteCanCastleKingSide  bool
+	WhiteCanCastleQueenSide bool
+	BlackCanCastleKingSide  bool
+	BlackCanCastleQueenSide bool
+	Turn                    Turn
+	Previous                EncodedMove
 }

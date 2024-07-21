@@ -49,5 +49,6 @@ func retrieveTestData() []testData {
 			},
 			encoded: 0b0010001111011111,
 		},
+		// TODO: better coverage
 	}
 }
