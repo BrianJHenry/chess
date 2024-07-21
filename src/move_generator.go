@@ -136,18 +136,22 @@ func GenerateKingMoves(state State, position Position) (moves []Move) {
 	return
 }
 
-// TODO
 func GenerateQueenMoves(state State, position, kingPosition Position) (moves []Move) {
+	moves = []Move{}
+
+	moves = append(moves, generateDirectionalMoves(state, position, kingPosition, rookDirections)...)
+	moves = append(moves, generateDirectionalMoves(state, position, kingPosition, bishopDirections)...)
+
 	return
 }
 
-// TODO
 func GenerateRookMoves(state State, position, kingPosition Position) (moves []Move) {
+	moves = generateDirectionalMoves(state, position, kingPosition, rookDirections)
 	return
 }
 
-// TODO
 func GenerateBishopMoves(state State, position, kingPosition Position) (moves []Move) {
+	moves = generateDirectionalMoves(state, position, kingPosition, bishopDirections)
 	return
 }
 
@@ -258,6 +262,43 @@ func isInBounds(position Position) bool {
 
 func isValidSquare(piece1, piece2 Piece) bool {
 	return piece1*piece2 <= 0
+}
+
+func generateDirectionalMoves(state State, position, kingPosition Position, directions [4]Position) (moves []Move) {
+	moves = []Move{}
+
+	var offset int8
+	var possibleMove Move
+	for i := 0; i < 4; i++ {
+		offset = 1
+		for {
+			nextPosition := position.AddOffset(directions[i].MultiplyScalar(offset))
+
+			if !isInBounds(nextPosition) {
+				break
+			}
+
+			nextSquare := state.Board.GetSquare(nextPosition)
+			possibleMove = Move{
+				position,
+				nextPosition,
+				None,
+			}
+
+			// If the square is empty or an unfriendly piece and executing the move does not result in a check, add it to the list
+			isFriendlyPiece := (state.Turn == BlackTurn && nextSquare > 0) || (state.Turn == WhiteTurn && nextSquare < 0)
+			if !isFriendlyPiece && !IsSquareAttacked(state.Board.ExecuteMove(possibleMove), kingPosition, state.Turn) {
+				moves = append(moves, possibleMove)
+			}
+
+			// Break on any non-empty squares
+			if nextSquare != 0 {
+				break
+			}
+		}
+	}
+
+	return
 }
 
 // The last square in a set of directions
