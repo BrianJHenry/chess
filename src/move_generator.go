@@ -25,8 +25,52 @@ var knightOffsets [8]Position = [8]Position{
 	{X: 1, Y: -2},
 }
 
-// TDOO
 func GenerateAllMoves(state State) (moves []Move) {
+	moves = []Move{}
+
+	var kingPosition Position
+	var position Position
+	var square Piece
+	var i int8
+	var j int8
+
+kingFinder:
+	for i = 0; i < 8; i++ {
+		for j = 0; j < 8; j++ {
+			kingPosition = Position{X: i, Y: j}
+			square = state.Board.GetSquare(position)
+			if (state.Turn == BlackTurn && square == BlackKing) ||
+				(state.Turn == WhiteTurn && square == WhiteKing) {
+
+				break kingFinder
+			}
+		}
+	}
+
+	for i = 0; i < 8; i++ {
+		for j = 0; j < 8; j++ {
+			position = Position{X: i, Y: j}
+			square = state.Board.GetSquare(position)
+
+			switch square {
+			case WhitePawn, BlackPawn:
+				moves = append(moves, GeneratePawnMoves(state, position, kingPosition)...)
+			case WhiteBishop, BlackBishop:
+				moves = append(moves, GenerateBishopMoves(state, position, kingPosition)...)
+			case WhiteKnight, BlackKnight:
+				moves = append(moves, GenerateKnightMoves(state, position, kingPosition)...)
+			case WhiteRook, BlackRook:
+				moves = append(moves, GenerateRookMoves(state, position, kingPosition)...)
+			case WhiteQueen, BlackQueen:
+				moves = append(moves, GenerateQueenMoves(state, position, kingPosition)...)
+			case WhiteKing, BlackKing:
+				moves = append(moves, GenerateKingMoves(state, position)...)
+			default:
+				// Pass on empty squares
+			}
+		}
+	}
+
 	return
 }
 
@@ -176,7 +220,6 @@ func GenerateKnightMoves(state State, position, kingPosition Position) (moves []
 	return
 }
 
-// TODO
 func GeneratePawnMoves(state State, position, kingPosition Position) (moves []Move) {
 
 	isEnemyPiece := func(piecePosition Position) bool {
