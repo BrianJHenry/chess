@@ -9,7 +9,7 @@ type testData struct {
 
 func TestEncodeMove(t *testing.T) {
 	for _, test := range retrieveTestData() {
-		if (test.encoded != test.move.EncodeMove(&Board{})) {
+		if test.encoded != test.move.EncodeMove() {
 			t.Fatalf("Move: %v does not match encoded move: %b", test.move, test.encoded)
 		}
 	}
@@ -17,7 +17,7 @@ func TestEncodeMove(t *testing.T) {
 
 func TestDecodeMove(t *testing.T) {
 	for _, test := range retrieveTestData() {
-		if (test.move != test.encoded.DecodeMove(&Board{})) {
+		if test.move != test.encoded.DecodeMove() {
 			t.Fatalf("Encoded move: %b does not match move: %v", test.encoded, test.move)
 		}
 	}
@@ -47,7 +47,7 @@ func retrieveTestData() []testData {
 				End:   Position{X: 7, Y: 1},
 				Flag:  Castle,
 			},
-			encoded: 0b0010001111011111,
+			encoded: 0b0011001111011111,
 		},
 		// TODO: better coverage
 	}

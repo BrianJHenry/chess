@@ -8,8 +8,13 @@ type MoveFlag uint8
 
 const (
 	None MoveFlag = iota
+	DoublePawnPush
 	EnPassant
 	Castle
+	PromoteToQueen
+	PromoteToRook
+	PromoteToBishop
+	PromoteToKnight
 )
 
 const threeBitMask uint8 = 0b00000111
@@ -41,7 +46,7 @@ type MoveWithInfo struct {
 Functions to translate between move types
 */
 
-func (move Move) EncodeMove(board *Board) (encoded EncodedMove) {
+func (move Move) EncodeMove() (encoded EncodedMove) {
 	encoded = 0
 	encoded |= EncodedMove((threeBitMask & uint8(move.Start.X)))
 	encoded |= EncodedMove((threeBitMask & uint8(move.Start.Y))) << 3
@@ -66,13 +71,12 @@ func (notated NotatedMove) DenotateMove(board *Board) (move Move) {
 	return
 }
 
-func (encoded EncodedMove) DecodeMove(board *Board) (move Move) {
-	move = Move{}
-	move.Start.X = int8(encoded & EncodedMove(threeBitMask))
-	move.Start.Y = int8(encoded & (EncodedMove(threeBitMask) << 3) >> 3)
-	move.End.X = int8(encoded & (EncodedMove(threeBitMask) << 6) >> 6)
-	move.End.Y = int8(encoded & (EncodedMove(threeBitMask) << 9) >> 9)
-	move.Flag = MoveFlag(encoded & (EncodedMove(threeBitMask) << 12) >> 12)
+func (encoded EncodedMove) DecodeMove() (move Move) {
+	move = Move{
+		Start: Position{X: int8(encoded & EncodedMove(threeBitMask)), Y: int8(encoded & (EncodedMove(threeBitMask) << 3) >> 3)},
+		End:   Position{X: int8(encoded & (EncodedMove(threeBitMask) << 6) >> 6), Y: int8(encoded & (EncodedMove(threeBitMask) << 9) >> 9)},
+		Flag:  MoveFlag(encoded & (EncodedMove(threeBitMask) << 12) >> 12),
+	}
 	return
 }
 

@@ -187,23 +187,54 @@ func GeneratePawnMoves(state State, position, kingPosition Position) (moves []Mo
 	checkIllegalMove := getIllegalMoveChecker(state, kingPosition)
 
 	var pawnDirection int8
+	var promotionFlag MoveFlag
+	var doublePushAvailable bool
 	if state.Turn == BlackTurn {
 		pawnDirection = 1
+		if position.X == 6 {
+			promotionFlag = PromoteToQueen
+		} else {
+			promotionFlag = None
+		}
+		doublePushAvailable = position.X == 1
 	} else {
 		pawnDirection = -1
+		if position.X == 1 {
+			promotionFlag = PromoteToQueen
+		} else {
+			promotionFlag = None
+		}
+		doublePushAvailable = position.X == 6
 	}
 
 	// Normal moves
 	pushPosition := position.AddOffset(Position{X: 0, Y: pawnDirection})
+	var move Move
 	if isInBounds(pushPosition) && state.Board.GetSquare(pushPosition) == EmptySquare {
-		move := Move{
+		move = Move{
 			position,
 			pushPosition,
-			None,
+			promotionFlag,
 		}
 
 		if !checkIllegalMove(move) {
 			moves = append(moves, move)
+		}
+
+		// Double push
+		if doublePushAvailable {
+			doublePushPosition := position.AddOffset(Position{X: 0, Y: pawnDirection * 2})
+			if isInBounds(doublePushPosition) && state.Board.GetSquare(doublePushPosition) == EmptySquare {
+				move = Move{
+					position,
+					doublePushPosition,
+					DoublePawnPush,
+				}
+
+				if !checkIllegalMove(move) {
+					moves = append(moves, move)
+				}
+			}
 		}
 	}
 
@@ -214,20 +245,34 @@ func GeneratePawnMoves(state State, position, kingPosition Position) (moves []Mo
 
 	for _, capturePosition := range capturePositions {
 		if isInBounds(capturePosition) && isEnemyPiece(capturePosition) {
-			move := Move{
+			move = Move{
 				position,
 				capturePosition,
-				None,
+				promotionFlag,
 			}
+
 			if !checkIllegalMove(move) {
 				moves = append(moves, move)
 			}
 		}
 	}
 
-	// Double moves
-
 	// En Passant
+	previousMove := state.Previous.DecodeMove()
+	if previousMove.Flag == DoublePawnPush && position.Y == previousMove.End.Y &&
+		(position.X+1 == previousMove.End.X || position.X-1 == previousMove.End.X) {
+
+		move = Move{
+			position,
+			Position{X: previousMove.End.X, Y: position.Y + pawnDirection},
+			EnPassant,
+		}
+
+		if !checkIllegalMove(move) {
+			moves = append(moves, move)
+		}
+	}
+
 	return
 }
 
