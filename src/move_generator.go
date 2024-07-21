@@ -151,8 +151,22 @@ func GenerateBishopMoves(state State, position, kingPosition Position) (moves []
 	return
 }
 
-// TODO
 func GenerateKnightMoves(state State, position, kingPosition Position) (moves []Move) {
+	moves = []Move{}
+
+	for _, knightPosition := range getKnightVision(position) {
+		if isValidSquare(state.Board.GetSquare(position), state.Board.GetSquare(knightPosition)) {
+			move := Move{
+				position,
+				knightPosition,
+				None,
+			}
+			if !IsSquareAttacked(state.Board.ExecuteMove(move), kingPosition, state.Turn) {
+				moves = append(moves, move)
+			}
+		}
+	}
+
 	return
 }
 
