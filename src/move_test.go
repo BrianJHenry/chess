@@ -27,28 +27,75 @@ func retrieveTestData() []testData {
 	return []testData{
 		{
 			move: Move{
-				Start: Position{X: 1, Y: 1},
-				End:   Position{X: 2, Y: 2},
+				Start: Position{1, 1},
+				End:   Position{2, 2},
 				Flag:  None,
 			},
 			encoded: 0b0000010010001001,
 		},
 		{
 			move: Move{
-				Start: Position{X: 1, Y: 3},
-				End:   Position{X: 1, Y: 5},
+				Start: Position{1, 3},
+				End:   Position{1, 5},
 				Flag:  None,
 			},
 			encoded: 0b0000101001011001,
 		},
 		{
 			move: Move{
-				Start: Position{X: 7, Y: 3},
-				End:   Position{X: 7, Y: 1},
+				Start: Position{4, 7},
+				End:   Position{6, 7},
 				Flag:  KingSideCastle,
 			},
-			encoded: 0b0010001111011111,
+			encoded: 0b0010111110111100,
 		},
-		// TODO: better coverage
+		{
+			move: Move{
+				Start: Position{4, 0},
+				End:   Position{2, 0},
+				Flag:  QueenSideCastle,
+			},
+			encoded: 0b0011000010000100,
+		},
+		{
+			move: Move{
+				Start: Position{4, 3},
+				End:   Position{5, 2},
+				Flag:  EnPassant,
+			},
+			encoded: 0b0001010101011100,
+		},
+		{
+			move: Move{
+				Start: Position{0, 6},
+				End:   Position{0, 7},
+				Flag:  PromoteToQueen,
+			},
+			encoded: 0b0100111000110000,
+		},
+		{
+			move: Move{
+				Start: Position{0, 6},
+				End:   Position{0, 7},
+				Flag:  PromoteToKnight,
+			},
+			encoded: 0b0111111000110000,
+		},
+		{
+			move: Move{
+				Start: Position{0, 6},
+				End:   Position{0, 7},
+				Flag:  PromoteToBishop,
+			},
+			encoded: 0b0110111000110000,
+		},
+		{
+			move: Move{
+				Start: Position{0, 6},
+				End:   Position{0, 7},
+				Flag:  PromoteToRook,
+			},
+			encoded: 0b0101111000110000,
+		},
 	}
 }
