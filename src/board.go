@@ -8,8 +8,8 @@ type Position struct {
 	X, Y int8
 }
 
-func InitialPosition() *Board {
-	return &Board{
+func InitialPosition() Board {
+	return Board{
 		{WhiteRook, WhitePawn, EmptySquare, EmptySquare, EmptySquare, EmptySquare, BlackPawn, BlackRook},
 		{WhiteKnight, WhitePawn, EmptySquare, EmptySquare, EmptySquare, EmptySquare, BlackPawn, BlackKnight},
 		{WhiteBishop, WhitePawn, EmptySquare, EmptySquare, EmptySquare, EmptySquare, BlackPawn, BlackBishop},

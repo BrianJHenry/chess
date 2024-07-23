@@ -2,7 +2,7 @@ package chess
 
 import "testing"
 
-type testData struct {
+type testMoveData struct {
 	move    Move
 	encoded EncodedMove
 }
@@ -23,8 +23,8 @@ func TestDecodeMove(t *testing.T) {
 	}
 }
 
-func retrieveTestData() []testData {
-	return []testData{
+func retrieveTestData() []testMoveData {
+	return []testMoveData{
 		{
 			move: Move{
 				Start: Position{1, 1},
