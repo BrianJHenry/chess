@@ -57,3 +57,34 @@ func getKnightColorForPawn(pawn Piece) Piece {
 		return WhiteKnight
 	}
 }
+
+func (piece Piece) GetPrintablePiece() string {
+	switch piece {
+	case WhitePawn:
+		return "WP"
+	case WhiteKnight:
+		return "WN"
+	case WhiteBishop:
+		return "WB"
+	case WhiteRook:
+		return "WR"
+	case WhiteQueen:
+		return "WQ"
+	case WhiteKing:
+		return "WK"
+	case BlackPawn:
+		return "BP"
+	case BlackKnight:
+		return "BN"
+	case BlackBishop:
+		return "BB"
+	case BlackRook:
+		return "BR"
+	case BlackQueen:
+		return "BQ"
+	case BlackKing:
+		return "BK"
+	default:
+		return "  "
+	}
+}

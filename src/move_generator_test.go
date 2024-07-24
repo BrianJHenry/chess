@@ -36,13 +36,13 @@ func TestMoveGenerationAndExecution(t *testing.T) {
 			}
 
 			if !matched {
-				errorCollection = append(errorCollection, fmt.Errorf("move not found: %s", result.Description))
+				errorCollection = append(errorCollection, fmt.Errorf("move not found in state %s: %s\n%s", test.Description, result.Description, result.Result.Board.GetPrintableBoard()))
 			}
 		}
 	}
 
 	err = errors.Join(errorCollection...)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatalf("Errors: %d\n%s", len(errorCollection), err.Error())
 	}
 }

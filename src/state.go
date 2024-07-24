@@ -24,21 +24,21 @@ func (state State) ExecuteMove(move Move) State {
 	blackCanCastleQueenSide := state.BlackCanCastleQueenSide
 
 	if state.Turn == BlackTurn {
-		if move.Start.Equals(Position{X: 4, Y: 7}) {
+		if move.Start.Equals(Position{X: 0, Y: 4}) {
 			blackCanCastleKingSide = false
 			blackCanCastleQueenSide = false
-		} else if move.Start.Equals(Position{X: 0, Y: 7}) {
+		} else if move.Start.Equals(Position{X: 0, Y: 0}) {
 			blackCanCastleQueenSide = false
-		} else if move.Start.Equals(Position{X: 7, Y: 7}) {
+		} else if move.Start.Equals(Position{X: 0, Y: 7}) {
 			blackCanCastleKingSide = false
 		}
 	} else {
-		if move.Start.Equals(Position{X: 4, Y: 0}) {
+		if move.Start.Equals(Position{X: 7, Y: 4}) {
 			whiteCanCastleKingSide = false
 			whiteCanCastleQueenSide = false
-		} else if move.Start.Equals(Position{X: 0, Y: 0}) {
-			whiteCanCastleQueenSide = false
 		} else if move.Start.Equals(Position{X: 7, Y: 0}) {
+			whiteCanCastleQueenSide = false
+		} else if move.Start.Equals(Position{X: 7, Y: 7}) {
 			whiteCanCastleKingSide = false
 		}
 	}

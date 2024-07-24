@@ -1,6 +1,9 @@
 package chess
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 type Board [8][8]Piece
 
@@ -8,16 +11,32 @@ type Position struct {
 	X, Y int8
 }
 
+func (board Board) GetPrintableBoard() string {
+	stringBoard := ""
+	for i := 0; i < 8; i++ {
+		stringBoard += "+----+----+----+----+----+----+----+----+\n"
+		stringBoard += "|    |    |    |    |    |    |    |    |\n"
+		for j := 0; j < 8; j++ {
+			stringBoard += fmt.Sprintf("| %s ", board[i][j].GetPrintablePiece())
+		}
+		stringBoard += "|\n"
+		stringBoard += "|    |    |    |    |    |    |    |    |\n"
+		stringBoard += "|    |    |    |    |    |    |    |    |\n"
+	}
+	stringBoard += "+----+----+----+----+----+----+----+----+\n"
+	return stringBoard
+}
+
 func InitialPosition() Board {
 	return Board{
-		{WhiteRook, WhitePawn, EmptySquare, EmptySquare, EmptySquare, EmptySquare, BlackPawn, BlackRook},
-		{WhiteKnight, WhitePawn, EmptySquare, EmptySquare, EmptySquare, EmptySquare, BlackPawn, BlackKnight},
-		{WhiteBishop, WhitePawn, EmptySquare, EmptySquare, EmptySquare, EmptySquare, BlackPawn, BlackBishop},
-		{WhiteQueen, WhitePawn, EmptySquare, EmptySquare, EmptySquare, EmptySquare, BlackPawn, BlackQueen},
-		{WhiteKing, WhitePawn, EmptySquare, EmptySquare, EmptySquare, EmptySquare, BlackPawn, BlackKing},
-		{WhiteBishop, WhitePawn, EmptySquare, EmptySquare, EmptySquare, EmptySquare, BlackPawn, BlackBishop},
-		{WhiteKnight, WhitePawn, EmptySquare, EmptySquare, EmptySquare, EmptySquare, BlackPawn, BlackKnight},
-		{WhiteRook, WhitePawn, EmptySquare, EmptySquare, EmptySquare, EmptySquare, BlackPawn, BlackRook},
+		{BlackRook, BlackKnight, BlackBishop, BlackQueen, BlackKing, BlackBishop, BlackKnight, BlackRook},
+		{BlackPawn, BlackPawn, BlackPawn, BlackPawn, BlackPawn, BlackPawn, BlackPawn, BlackPawn},
+		{EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare},
+		{EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare},
+		{EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare},
+		{EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare},
+		{WhitePawn, WhitePawn, WhitePawn, WhitePawn, WhitePawn, WhitePawn, WhitePawn, WhitePawn},
+		{WhiteRook, WhiteKnight, WhiteBishop, WhiteQueen, WhiteKing, WhiteBishop, WhiteKnight, WhiteRook},
 	}
 }
 
@@ -31,20 +50,20 @@ func (board Board) ExecuteMove(move Move) Board {
 		board[move.End.X][move.End.Y] = piece
 	case EnPassant:
 		board[move.Start.X][move.Start.Y] = EmptySquare
-		board[move.End.X][move.Start.Y] = EmptySquare
+		board[move.Start.X][move.End.Y] = EmptySquare
 		board[move.End.X][move.End.Y] = piece
 	case QueenSideCastle:
 		queenSideRook := getRookColorForKing(piece)
-		board[4][move.Start.Y] = EmptySquare
-		board[3][move.Start.Y] = queenSideRook
-		board[2][move.Start.Y] = piece
-		board[0][move.Start.Y] = EmptySquare
+		board[move.Start.X][4] = EmptySquare
+		board[move.Start.X][3] = queenSideRook
+		board[move.Start.X][2] = piece
+		board[move.Start.X][0] = EmptySquare
 	case KingSideCastle:
 		kingSideRook := getRookColorForKing(piece)
-		board[4][move.Start.Y] = EmptySquare
-		board[5][move.Start.Y] = kingSideRook
-		board[6][move.Start.Y] = piece
-		board[7][move.Start.Y] = EmptySquare
+		board[move.Start.X][4] = EmptySquare
+		board[move.Start.X][5] = kingSideRook
+		board[move.Start.X][6] = piece
+		board[move.Start.X][7] = EmptySquare
 	case PromoteToQueen:
 		queen := getQueenColorForPawn(piece)
 		board[move.Start.X][move.Start.Y] = EmptySquare
@@ -77,7 +96,7 @@ func (board Board) FindKing(color Turn) (kingPosition Position, err error) {
 	var j int8
 	for i = 0; i < 8; i++ {
 		for j = 0; j < 8; j++ {
-			kingPosition = Position{X: i, Y: j}
+			kingPosition = Position{i, j}
 			square = board.GetSquare(kingPosition)
 
 			if (color == BlackTurn && square == BlackKing) ||
@@ -101,11 +120,11 @@ func (board Board) IsInCheck(color Turn) (bool, error) {
 }
 
 func (position Position) AddOffset(offset Position) Position {
-	return Position{X: position.X + offset.X, Y: position.Y + offset.Y}
+	return Position{position.X + offset.X, position.Y + offset.Y}
 }
 
 func (position Position) MultiplyScalar(scalar int8) Position {
-	return Position{X: position.X * scalar, Y: position.Y * scalar}
+	return Position{position.X * scalar, position.Y * scalar}
 }
 
 func (position Position) Equals(other Position) bool {

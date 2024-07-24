@@ -51,13 +51,14 @@ func ConvertFenToState(fenString string) (State, error) {
 
 	// Convert board
 	board := Board{}
+	// TODO: possibly look at what the most efficient way to store rank/files is
 	for rankIndex, rank := range boardRanks {
 		fileIndex := 0
 		for _, char := range rank {
 			// Handle number of empty squares
 			if number, err := strconv.Atoi(string(char)); err == nil {
 				for counter := 0; counter < number; counter++ {
-					board[fileIndex][rankIndex] = EmptySquare
+					board[rankIndex][fileIndex] = EmptySquare
 					fileIndex++
 				}
 			} else {
@@ -66,7 +67,7 @@ func ConvertFenToState(fenString string) (State, error) {
 					return State{}, err
 				}
 
-				board[fileIndex][rankIndex] = piece
+				board[rankIndex][fileIndex] = piece
 				fileIndex++
 			}
 		}
