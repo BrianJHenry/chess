@@ -53,3 +53,12 @@ func (state State) ExecuteMove(move Move) State {
 		move.EncodeMove(),
 	}
 }
+
+func (state State) Equals(other State) bool {
+	return state.Board == other.Board &&
+		state.WhiteCanCastleKingSide == other.WhiteCanCastleKingSide &&
+		state.BlackCanCastleKingSide == other.BlackCanCastleKingSide &&
+		state.WhiteCanCastleQueenSide == other.WhiteCanCastleQueenSide &&
+		state.BlackCanCastleQueenSide == other.BlackCanCastleQueenSide &&
+		state.Turn == other.Turn
+}

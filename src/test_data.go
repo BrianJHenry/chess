@@ -2,14 +2,22 @@ package chess
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
+	"io/fs"
 	"os"
+	"path/filepath"
 )
 
 // Output to be used in tests
 type MoveGenerationTestData struct {
-	Initial State
-	Results []State
+	Description string
+	Initial     State
+	Results     []MoveGenerationResultTestData
+}
+
+type MoveGenerationResultTestData struct {
+	Result      State
+	Description string
 }
 
 // Data stuctures to hold json
@@ -33,14 +41,38 @@ type FenExpectedState struct {
 	Fen  string `json:"fen"`
 }
 
-func JsonToFormattedTestData(filePath string) ([]MoveGenerationTestData, error) {
+func LoadTestData() ([]MoveGenerationTestData, error) {
+	moveGenerationTestData := []MoveGenerationTestData{}
+	err := filepath.WalkDir("../test_data", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip non json files
+		if filepath.Ext(path) != ".json" {
+			return nil
+		}
+
+		testData, err := jsonToFormattedTestData(path)
+		if err != nil {
+			return err
+		}
+
+		moveGenerationTestData = append(moveGenerationTestData, testData...)
+		return nil
+	})
+
+	return moveGenerationTestData, err
+}
+
+func jsonToFormattedTestData(filePath string) ([]MoveGenerationTestData, error) {
 	jsonFile, err := os.Open(filePath)
 	if err != nil {
 		return []MoveGenerationTestData{}, nil
 	}
 	defer jsonFile.Close()
 
-	byteValue, _ := ioutil.ReadAll(jsonFile)
+	byteValue, _ := io.ReadAll(jsonFile)
 
 	var fenTestCases FenTestCases
 	json.Unmarshal(byteValue, &fenTestCases)
@@ -53,7 +85,7 @@ func JsonToFormattedTestData(filePath string) ([]MoveGenerationTestData, error) 
 			return []MoveGenerationTestData{}, err
 		}
 
-		var expected = make([]State, 0, len(testCase.Expected))
+		var expected = make([]MoveGenerationResultTestData, 0, len(testCase.Expected))
 
 		for _, expectedFenState := range testCase.Expected {
 			expectedState, err := ConvertFenToState(expectedFenState.Fen)
@@ -61,10 +93,14 @@ func JsonToFormattedTestData(filePath string) ([]MoveGenerationTestData, error) 
 				return []MoveGenerationTestData{}, err
 			}
 
-			expected = append(expected, expectedState)
+			expected = append(expected, MoveGenerationResultTestData{
+				expectedState,
+				expectedFenState.Move,
+			})
 		}
 
 		testData = append(testData, MoveGenerationTestData{
+			testCase.Start.Description,
 			initialState,
 			expected,
 		})

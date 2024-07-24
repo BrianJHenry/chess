@@ -8,7 +8,7 @@ import (
 
 func ConvertFenToState(fenString string) (State, error) {
 	// Read and validate tokens
-	tokens := strings.Split(fenString, "-")
+	tokens := strings.Split(fenString, " ")
 	if len(tokens) != 6 {
 		return State{}, fmt.Errorf("incorrect number of tokens in FEN state: %s", fenString)
 	}
