@@ -6,6 +6,11 @@ import (
 	"testing"
 )
 
+type StateAndPreviousMove struct {
+	State State
+	Move  string
+}
+
 func TestMoveGenerationAndExecution(t *testing.T) {
 	data, err := LoadTestData()
 	if err != nil {
@@ -20,24 +25,39 @@ func TestMoveGenerationAndExecution(t *testing.T) {
 			continue
 		}
 
-		nextStates := make([]State, len(moves))
+		nextStates := make([]StateAndPreviousMove, len(moves))
 		for i, move := range moves {
-			nextStates[i] = test.Initial.ExecuteMove(move)
+			nextState := test.Initial.ExecuteMove(move)
+			moveString, err := move.ToAlgebraicNotation(test.Initial)
+			if err != nil {
+				errorCollection = append(errorCollection, err)
+			}
+
+			nextStates[i] = StateAndPreviousMove{
+				State: nextState,
+				Move:  moveString,
+			}
 		}
 
 		// TODO: come back and refine data structure/comparison; N^2 is ugly
 		for _, result := range test.Results {
-			matched := false
+			isBoardMatched := false
 			for _, nextState := range nextStates {
-				if result.Result.Equals(nextState) {
-					matched = true
+				if result.Result == nextState.State {
+					isBoardMatched = true
+
+					// Check that move notation is correct
+					if result.Move != nextState.Move {
+						errorCollection = append(errorCollection, fmt.Errorf("move notation incorrect: expected=%s ; actual=%s", result.Move, nextState.Move))
+					}
 					break
 				}
 			}
 
-			if !matched {
-				errorCollection = append(errorCollection, fmt.Errorf("move not found in state %s: %s\nInitial:\n%s\nResult\n%s", test.Description, result.Description, test.Initial.Board.GetPrintableBoard(), result.Result.Board.GetPrintableBoard()))
+			if !isBoardMatched {
+				errorCollection = append(errorCollection, fmt.Errorf("state not found for move %s: %s\nInitial:\n%s\nResult\n%s", test.Description, result.Move, test.Initial.Board.GetPrintableBoard(), result.Result.Board.GetPrintableBoard()))
 			}
+
 		}
 	}
 

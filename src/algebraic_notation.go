@@ -4,9 +4,9 @@ func (move Move) ToAlgebraicNotation(state State) (string, error) {
 	var baseString string
 	switch move.Flag {
 	case KingSideCastle:
-		baseString = "0-0"
+		baseString = "O-O"
 	case QueenSideCastle:
-		baseString = "0-0-0"
+		baseString = "O-O-O"
 	default:
 		var err error
 		baseString, err = move.getMoveAlgebraicNotation(state.Board)
@@ -50,7 +50,7 @@ func (move Move) getMoveAlgebraicNotation(board Board) (string, error) {
 
 		// Capture
 		if move.Start.Y != move.End.Y {
-			base = string(ConvertFileToString(move.Start.Y)) + base
+			base = string(ConvertFileToString(move.Start.Y)) + "x" + base
 		}
 
 		// Promotion
@@ -147,7 +147,7 @@ func getCoreAlgebraicNotation(board Board, piece Piece, move Move, visiblePositi
 	anyAmbiguities := false
 	for _, visiblePosition := range visiblePositions {
 		// Check for rooks that could make the same move
-		if visiblePosition.Valid && board.GetSquare(visiblePosition.Position) == piece {
+		if visiblePosition.Valid && visiblePosition.Position != move.Start && board.GetSquare(visiblePosition.Position) == piece {
 			if visiblePosition.Position.X == move.Start.X {
 				sameRank = true
 			} else if visiblePosition.Position.Y == move.Start.Y {

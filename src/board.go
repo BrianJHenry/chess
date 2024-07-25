@@ -173,7 +173,7 @@ func ConvertPositionToString(position Position) (string, error) {
 		return "", fmt.Errorf("position out of bounds: %d, %d", position.X, position.Y)
 	}
 
-	rankChar := (position.X - 7) + '1'
+	rankChar := (7 - position.X) + '1'
 	fileChar := position.Y + 'a'
 
 	return fmt.Sprintf("%c%c", fileChar, rankChar), nil

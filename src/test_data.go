@@ -16,8 +16,8 @@ type MoveGenerationTestData struct {
 }
 
 type MoveGenerationResultTestData struct {
-	Result      State
-	Description string
+	Result State
+	Move   string
 }
 
 // Data stuctures to hold json
