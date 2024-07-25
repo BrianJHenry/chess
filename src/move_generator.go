@@ -356,10 +356,10 @@ func IsSquareAttacked(board Board, position Position, defenderSide Turn) bool {
 	bishopVisions := getDirectionalVision(board, position, bishopDirections)
 	for _, bishopVision := range bishopVisions {
 		// Don't consider the square itself
-		if position == bishopVision {
+		if !bishopVision.Valid {
 			continue
 		}
-		seenPiece := board.GetSquare(bishopVision)
+		seenPiece := board.GetSquare(bishopVision.Position)
 		if (defenderSide == BlackTurn && (seenPiece == WhiteBishop || seenPiece == WhiteQueen)) ||
 			(defenderSide == WhiteTurn && (seenPiece == BlackBishop || seenPiece == BlackQueen)) {
 
@@ -371,10 +371,10 @@ func IsSquareAttacked(board Board, position Position, defenderSide Turn) bool {
 	rookVisions := getDirectionalVision(board, position, rookDirections)
 	for _, rookVision := range rookVisions {
 		// Don't consider the square itself
-		if position == rookVision {
+		if !rookVision.Valid {
 			continue
 		}
-		seenPiece := board.GetSquare(rookVision)
+		seenPiece := board.GetSquare(rookVision.Position)
 		if (defenderSide == BlackTurn && (seenPiece == WhiteRook || seenPiece == WhiteQueen)) ||
 			(defenderSide == WhiteTurn && (seenPiece == BlackRook || seenPiece == BlackQueen)) {
 
@@ -462,9 +462,8 @@ func generateDirectionalMoves(state State, position, kingPosition Position, dire
 }
 
 // The last square in a set of directions
-// TODO: Possibly return NullablePosition (case where a piece is up against the side of the board)
-func getDirectionalVision(board Board, position Position, directions [4]Position) [4]Position {
-	positions := [4]Position{}
+func getDirectionalVision(board Board, position Position, directions [4]Position) [4]NullablePosition {
+	positions := [4]NullablePosition{}
 
 	var endFound bool
 	var offset int8
@@ -475,10 +474,15 @@ func getDirectionalVision(board Board, position Position, directions [4]Position
 			nextPosition := position.AddOffset(directions[i].MultiplyScalar(offset))
 			if !isInBounds(nextPosition) {
 				endFound = true
-				positions[i] = position.AddOffset(directions[i].MultiplyScalar(offset - 1))
+				positions[i] = NullablePosition{
+					Valid: false,
+				}
 			} else if nextSquare := board.GetSquare(nextPosition); nextSquare != EmptySquare {
 				endFound = true
-				positions[i] = nextPosition
+				positions[i] = NullablePosition{
+					Position: nextPosition,
+					Valid:    true,
+				}
 			}
 			offset++
 		}

@@ -16,6 +16,19 @@ type NullablePosition struct {
 	Valid    bool
 }
 
+func ConvertToNullablePositions(positions []Position) []NullablePosition {
+	nullables := make([]NullablePosition, len(positions))
+
+	for i, pos := range positions {
+		nullables[i] = NullablePosition{
+			Valid:    true,
+			Position: pos,
+		}
+	}
+
+	return nullables
+}
+
 func (board Board) GetPrintableBoard() string {
 	stringBoard := ""
 	for i := 0; i < 8; i++ {

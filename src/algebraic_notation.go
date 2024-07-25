@@ -9,7 +9,7 @@ func (move Move) ToAlgebraicNotation(state State) (string, error) {
 		baseString = "0-0-0"
 	default:
 		var err error
-		baseString, err = move.baseAlgebraicNotation(state.Board)
+		baseString, err = move.getMoveAlgebraicNotation(state.Board)
 		if err != nil {
 			return "", err
 		}
@@ -21,7 +21,6 @@ func (move Move) ToAlgebraicNotation(state State) (string, error) {
 	if err != nil {
 		return baseString, err
 	}
-
 	if isInCheck {
 		moves, err := GenerateAllMoves(updatedState)
 		if err != nil {
@@ -38,7 +37,7 @@ func (move Move) ToAlgebraicNotation(state State) (string, error) {
 	return baseString, nil
 }
 
-func (move Move) baseAlgebraicNotation(board Board) (string, error) {
+func (move Move) getMoveAlgebraicNotation(board Board) (string, error) {
 	piece := board.GetSquare(move.Start)
 
 	switch piece {
@@ -70,13 +69,56 @@ func (move Move) baseAlgebraicNotation(board Board) (string, error) {
 	case WhiteRook, BlackRook:
 		base := "R"
 
-		// Disambiguate
+		// Disambiguate and get core
 		visiblePositions := getDirectionalVision(board, move.End, rookDirections)
-		disambiguated, err := disambiguateAlgebraicNotation(board, piece, move.Start, visiblePositions[:])
+		core, err := getCoreAlgebraicNotation(board, piece, move, visiblePositions[:])
 		if err != nil {
-			return "", nil
+			return "", err
 		}
-		base += disambiguated
+		base += core
+
+		return base, nil
+	case WhiteKnight, BlackKnight:
+		base := "N"
+
+		// Disambiguate and get core
+		visiblePositions := getKnightVision(move.End)
+		core, err := getCoreAlgebraicNotation(board, piece, move, ConvertToNullablePositions(visiblePositions))
+		if err != nil {
+			return "", err
+		}
+		base += core
+
+		return base, nil
+	case WhiteBishop, BlackBishop:
+		base := "B"
+
+		// Disambiguate and get core
+		visiblePositions := getDirectionalVision(board, move.End, bishopDirections)
+		core, err := getCoreAlgebraicNotation(board, piece, move, visiblePositions[:])
+		if err != nil {
+			return "", err
+		}
+		base += core
+
+		return base, nil
+	case WhiteQueen, BlackQueen:
+		base := "Q"
+
+		// Disambiguate and get core
+		bishopVisions := getDirectionalVision(board, move.End, bishopDirections)
+		rookVisions := getDirectionalVision(board, move.End, rookDirections)
+		visiblePositions := bishopVisions[:]
+		visiblePositions = append(visiblePositions, rookVisions[:]...)
+		core, err := getCoreAlgebraicNotation(board, piece, move, visiblePositions)
+		if err != nil {
+			return "", err
+		}
+		base += core
+
+		return base, nil
+	case WhiteKing, BlackKing:
+		base := "K"
 
 		// Captures
 		if board.GetSquare(move.End) != EmptySquare {
@@ -88,52 +130,59 @@ func (move Move) baseAlgebraicNotation(board Board) (string, error) {
 		if err != nil {
 			return "", err
 		}
-
 		base += endPosition
+
 		return base, nil
-	case WhiteKnight, BlackKnight:
-		//
-	case WhiteBishop, BlackBishop:
-		//
-	case WhiteQueen, BlackQueen:
-		//
-	case WhiteKing, BlackKing:
-		//
 	}
 
 	return "", nil
 }
 
-func disambiguateAlgebraicNotation(board Board, piece Piece, start Position, visiblePositions []Position) (string, error) {
+func getCoreAlgebraicNotation(board Board, piece Piece, move Move, visiblePositions []NullablePosition) (string, error) {
+	base := ""
+
+	// Disambiguate
 	sameFile := false
 	sameRank := false
 	anyAmbiguities := false
 	for _, visiblePosition := range visiblePositions {
 		// Check for rooks that could make the same move
-		if visiblePosition != start && board.GetSquare(visiblePosition) == piece {
-			if visiblePosition.X == start.X {
+		if visiblePosition.Valid && board.GetSquare(visiblePosition.Position) == piece {
+			if visiblePosition.Position.X == move.Start.X {
 				sameRank = true
-			} else if visiblePosition.Y == start.Y {
+			} else if visiblePosition.Position.Y == move.Start.Y {
 				sameFile = true
 			}
 			anyAmbiguities = true
 		}
 	}
 	if sameFile && sameRank {
-		startPosition, err := ConvertPositionToString(start)
+		startPosition, err := ConvertPositionToString(move.Start)
 		if err != nil {
 			return "", err
 		}
 		return startPosition, nil
 	} else if sameFile {
-		return ConvertRankToString(start.X), nil
+		base += ConvertRankToString(move.Start.X)
 	} else if anyAmbiguities {
-		return ConvertFileToString(start.Y), nil
+		base += ConvertFileToString(move.Start.Y)
 	}
 
-	return "", nil
+	// Captures
+	if board.GetSquare(move.End) != EmptySquare {
+		base += "x"
+	}
+
+	// End position
+	endPosition, err := ConvertPositionToString(move.End)
+	if err != nil {
+		return "", err
+	}
+	base += endPosition
+
+	return base, nil
 }
 
-func AlgebraicNotationToMove(algebraicNotation string, board Board) (move Move) {
+func AlgebraicNotationToMove(algebraicNotation string, state State) (move Move) {
 	return
 }
