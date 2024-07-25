@@ -29,8 +29,6 @@ const fourBitMask uint8 = 0b00001111
 */
 type EncodedMove int16
 
-type NotatedMove string
-
 type Move struct {
 	Start, End Position
 	Flag       MoveFlag
@@ -46,7 +44,7 @@ type MoveWithInfo struct {
 Functions to translate between move types
 */
 
-func (move Move) EncodeMove() (encoded EncodedMove) {
+func (move Move) ToEncoded() (encoded EncodedMove) {
 	encoded = 0
 	encoded |= EncodedMove((threeBitMask & uint8(move.Start.X)))
 	encoded |= EncodedMove((threeBitMask & uint8(move.Start.Y))) << 3
@@ -56,31 +54,10 @@ func (move Move) EncodeMove() (encoded EncodedMove) {
 	return
 }
 
-// TODO
-func (move Move) NotateMove(board *Board) (notated NotatedMove) {
-	return
-}
-
-// TODO
-func (notated NotatedMove) EncodeNotatedMove(board *Board) (encoded EncodedMove) {
-	return
-}
-
-// TODO
-func (notated NotatedMove) DenotateMove(board *Board) (move Move) {
-	return
-}
-
-func (encoded EncodedMove) DecodeMove() (move Move) {
-	move = Move{
+func (encoded EncodedMove) ToMove() Move {
+	return Move{
 		Start: Position{X: int8(encoded & EncodedMove(threeBitMask)), Y: int8(encoded & (EncodedMove(threeBitMask) << 3) >> 3)},
 		End:   Position{X: int8(encoded & (EncodedMove(threeBitMask) << 6) >> 6), Y: int8(encoded & (EncodedMove(threeBitMask) << 9) >> 9)},
 		Flag:  MoveFlag(encoded & (EncodedMove(threeBitMask) << 12) >> 12),
 	}
-	return
-}
-
-// TODO
-func (encoded EncodedMove) NotateEncodedMove(board *Board) (notated NotatedMove) {
-	return
 }

@@ -9,7 +9,7 @@ type testMoveData struct {
 
 func TestEncodeMove(t *testing.T) {
 	for _, test := range retrieveTestData() {
-		if test.encoded != test.move.EncodeMove() {
+		if test.encoded != test.move.ToEncoded() {
 			t.Fatalf("Move: %v does not match encoded move: %b", test.move, test.encoded)
 		}
 	}
@@ -17,12 +17,13 @@ func TestEncodeMove(t *testing.T) {
 
 func TestDecodeMove(t *testing.T) {
 	for _, test := range retrieveTestData() {
-		if test.move != test.encoded.DecodeMove() {
+		if test.move != test.encoded.ToMove() {
 			t.Fatalf("Encoded move: %b does not match move: %v", test.encoded, test.move)
 		}
 	}
 }
 
+// TODO: fix for changes to board
 func retrieveTestData() []testMoveData {
 	return []testMoveData{
 		{

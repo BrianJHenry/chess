@@ -353,20 +353,30 @@ func IsSquareAttacked(board Board, position Position, defenderSide Turn) bool {
 	}
 
 	// Check for bishop type attacks
-	bishopMoves := getDirectionalVision(board, position, bishopDirections)
-	for _, bishopVision := range bishopMoves {
-		if (defenderSide == BlackTurn && (bishopVision == WhiteBishop || bishopVision == WhiteQueen)) ||
-			(defenderSide == WhiteTurn && (bishopVision == BlackBishop || bishopVision == BlackQueen)) {
+	bishopVisions := getDirectionalVision(board, position, bishopDirections)
+	for _, bishopVision := range bishopVisions {
+		// Don't consider the square itself
+		if position == bishopVision {
+			continue
+		}
+		seenPiece := board.GetSquare(bishopVision)
+		if (defenderSide == BlackTurn && (seenPiece == WhiteBishop || seenPiece == WhiteQueen)) ||
+			(defenderSide == WhiteTurn && (seenPiece == BlackBishop || seenPiece == BlackQueen)) {
 
 			return true
 		}
 	}
 
 	// Check for rook type attacks
-	rookMoves := getDirectionalVision(board, position, rookDirections)
-	for _, rookVision := range rookMoves {
-		if (defenderSide == BlackTurn && (rookVision == WhiteRook || rookVision == WhiteQueen)) ||
-			(defenderSide == WhiteTurn && (rookVision == BlackRook || rookVision == BlackQueen)) {
+	rookVisions := getDirectionalVision(board, position, rookDirections)
+	for _, rookVision := range rookVisions {
+		// Don't consider the square itself
+		if position == rookVision {
+			continue
+		}
+		seenPiece := board.GetSquare(rookVision)
+		if (defenderSide == BlackTurn && (seenPiece == WhiteRook || seenPiece == WhiteQueen)) ||
+			(defenderSide == WhiteTurn && (seenPiece == BlackRook || seenPiece == BlackQueen)) {
 
 			return true
 		}
@@ -452,8 +462,9 @@ func generateDirectionalMoves(state State, position, kingPosition Position, dire
 }
 
 // The last square in a set of directions
-func getDirectionalVision(board Board, position Position, directions [4]Position) [4]Piece {
-	pieces := [4]Piece{}
+// TODO: Possibly return NullablePosition (case where a piece is up against the side of the board)
+func getDirectionalVision(board Board, position Position, directions [4]Position) [4]Position {
+	positions := [4]Position{}
 
 	var endFound bool
 	var offset int8
@@ -464,16 +475,16 @@ func getDirectionalVision(board Board, position Position, directions [4]Position
 			nextPosition := position.AddOffset(directions[i].MultiplyScalar(offset))
 			if !isInBounds(nextPosition) {
 				endFound = true
-				pieces[i] = EmptySquare
+				positions[i] = position.AddOffset(directions[i].MultiplyScalar(offset - 1))
 			} else if nextSquare := board.GetSquare(nextPosition); nextSquare != EmptySquare {
 				endFound = true
-				pieces[i] = nextSquare
+				positions[i] = nextPosition
 			}
 			offset++
 		}
 	}
 
-	return pieces
+	return positions
 }
 
 func getKnightVision(position Position) []Position {

@@ -136,21 +136,40 @@ func (position Position) MultiplyScalar(scalar int8) Position {
 func ConvertStringToPosition(stringPosition string) (Position, error) {
 	if len(stringPosition) != 2 {
 		return Position{}, errors.New("position codes should be of length 2")
-	} else {
-		rankChar := stringPosition[1]
-		rank := 7 - (rankChar - '1')
-
-		fileChar := stringPosition[0]
-		file := fileChar - 'a'
-		position := Position{
-			int8(rank),
-			int8(file),
-		}
-
-		if isInBounds(position) {
-			return position, nil
-		} else {
-			return position, fmt.Errorf("invalid position: %d, %d", position.X, position.Y)
-		}
 	}
+
+	rankChar := stringPosition[1]
+	rank := 7 - (rankChar - '1')
+
+	fileChar := stringPosition[0]
+	file := fileChar - 'a'
+	position := Position{
+		int8(rank),
+		int8(file),
+	}
+
+	if isInBounds(position) {
+		return position, nil
+	} else {
+		return position, fmt.Errorf("invalid position: %d, %d", position.X, position.Y)
+	}
+}
+
+func ConvertPositionToString(position Position) (string, error) {
+	if !isInBounds(position) {
+		return "", fmt.Errorf("position out of bounds: %d, %d", position.X, position.Y)
+	}
+
+	rankChar := (position.X - 7) + '1'
+	fileChar := position.Y + 'a'
+
+	return fmt.Sprintf("%c%c", fileChar, rankChar), nil
+}
+
+func ConvertFileToString(file int8) string {
+	return string(rune(file + 'a'))
+}
+
+func ConvertRankToString(rank int8) string {
+	return string(rune(7 - rank + '1'))
 }
