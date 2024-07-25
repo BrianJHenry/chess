@@ -11,6 +11,11 @@ type Position struct {
 	X, Y int8
 }
 
+type NullablePosition struct {
+	Position Position
+	Valid    bool
+}
+
 func (board Board) GetPrintableBoard() string {
 	stringBoard := ""
 	for i := 0; i < 8; i++ {
@@ -127,6 +132,25 @@ func (position Position) MultiplyScalar(scalar int8) Position {
 	return Position{position.X * scalar, position.Y * scalar}
 }
 
-func (position Position) Equals(other Position) bool {
-	return position.X == other.X && position.Y == other.Y
+// Ex. A1 -> 7, 0; C4 => 4, 2
+func ConvertStringToPosition(stringPosition string) (Position, error) {
+	if len(stringPosition) != 2 {
+		return Position{}, errors.New("position codes should be of length 2")
+	} else {
+		rankChar := stringPosition[1]
+		rank := 7 - (rankChar - '1')
+
+		fileChar := stringPosition[0]
+		file := fileChar - 'a'
+		position := Position{
+			int8(rank),
+			int8(file),
+		}
+
+		if isInBounds(position) {
+			return position, nil
+		} else {
+			return position, fmt.Errorf("invalid position: %d, %d", position.X, position.Y)
+		}
+	}
 }

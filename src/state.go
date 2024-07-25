@@ -14,7 +14,7 @@ type State struct {
 	BlackCanCastleKingSide  bool
 	BlackCanCastleQueenSide bool
 	Turn                    Turn
-	Previous                EncodedMove
+	EnPassantPosition       NullablePosition
 }
 
 func (state State) ExecuteMove(move Move) State {
@@ -24,22 +24,35 @@ func (state State) ExecuteMove(move Move) State {
 	blackCanCastleQueenSide := state.BlackCanCastleQueenSide
 
 	if state.Turn == BlackTurn {
-		if move.Start.Equals(Position{X: 0, Y: 4}) {
+		if (move.Start == Position{0, 4}) {
 			blackCanCastleKingSide = false
 			blackCanCastleQueenSide = false
-		} else if move.Start.Equals(Position{X: 0, Y: 0}) {
+		} else if (move.Start == Position{0, 0}) {
 			blackCanCastleQueenSide = false
-		} else if move.Start.Equals(Position{X: 0, Y: 7}) {
+		} else if (move.Start == Position{0, 7}) {
 			blackCanCastleKingSide = false
 		}
 	} else {
-		if move.Start.Equals(Position{X: 7, Y: 4}) {
+		if (move.Start == Position{7, 4}) {
 			whiteCanCastleKingSide = false
 			whiteCanCastleQueenSide = false
-		} else if move.Start.Equals(Position{X: 7, Y: 0}) {
+		} else if (move.Start == Position{7, 0}) {
 			whiteCanCastleQueenSide = false
-		} else if move.Start.Equals(Position{X: 7, Y: 7}) {
+		} else if (move.Start == Position{7, 7}) {
 			whiteCanCastleKingSide = false
+		}
+	}
+
+	enPassantSquare := NullablePosition{
+		Valid: false,
+	}
+	if (state.Turn == BlackTurn && state.Board.GetSquare(move.Start) == BlackPawn && (move.End.X-move.Start.X == 2)) ||
+		(state.Turn == WhiteTurn && state.Board.GetSquare(move.Start) == WhitePawn && (move.Start.X-move.End.X == 2)) {
+
+		enPassantSquare.Valid = true
+		enPassantSquare.Position = Position{
+			X: (move.Start.X + move.End.X) / 2,
+			Y: move.End.Y,
 		}
 	}
 
@@ -50,7 +63,7 @@ func (state State) ExecuteMove(move Move) State {
 		blackCanCastleKingSide,
 		blackCanCastleQueenSide,
 		!state.Turn,
-		move.EncodeMove(),
+		enPassantSquare,
 	}
 }
 

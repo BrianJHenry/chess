@@ -39,11 +39,13 @@ func ConvertFenToState(fenString string) (State, error) {
 		return State{}, fmt.Errorf("too many characters specifying en passant target square in FEN state: %s", fenString)
 	}
 
+	// Half moves
 	_, err := strconv.Atoi(tokens[4])
 	if err != nil {
 		return State{}, err
 	}
 
+	// Full moves
 	_, err = strconv.Atoi(tokens[5])
 	if err != nil {
 		return State{}, err
@@ -97,7 +99,22 @@ func ConvertFenToState(fenString string) (State, error) {
 		}
 	}
 
-	// TODO: en passant check
+	var enPassantSquare NullablePosition
+	if enPassant == "-" {
+		enPassantSquare = NullablePosition{
+			Valid: false,
+		}
+	} else {
+		pos, err := ConvertStringToPosition(enPassant)
+		if err != nil {
+			return State{}, err
+		}
+
+		enPassantSquare = NullablePosition{
+			Valid:    true,
+			Position: pos,
+		}
+	}
 
 	return State{
 		board,
@@ -106,7 +123,7 @@ func ConvertFenToState(fenString string) (State, error) {
 		blackCanCastleKingSide,
 		blackCanCastleQueenSide,
 		turn,
-		0, // TODO: en passant
+		enPassantSquare,
 	}, nil
 }
 

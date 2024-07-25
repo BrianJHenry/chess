@@ -299,26 +299,16 @@ func GeneratePawnMoves(state State, position, kingPosition Position) (moves []Mo
 					moves = append(moves, move)
 				}
 			}
-		}
-	}
+		} else if state.EnPassantPosition.Valid && capturePosition == state.EnPassantPosition.Position {
+			move = Move{
+				position,
+				capturePosition,
+				EnPassant,
+			}
 
-	// En Passant
-	previousMove := state.Previous.DecodeMove()
-	previousMovePiece := state.Board.GetSquare(previousMove.End)
-	previousDoublePawnPush := (previousMovePiece == BlackPawn && previousMove.Start.X == 1 && previousMove.End.X == 3) ||
-		(previousMovePiece == WhitePawn && previousMove.Start.X == 6 && previousMove.End.X == 4)
-
-	if previousDoublePawnPush && position.X == previousMove.End.X &&
-		(position.Y+1 == previousMove.End.Y || position.Y-1 == previousMove.End.Y) {
-
-		move = Move{
-			position,
-			Position{position.X + pawnDirection, previousMove.End.Y},
-			EnPassant,
-		}
-
-		if !checkIllegalMove(move) {
-			moves = append(moves, move)
+			if !checkIllegalMove(move) {
+				moves = append(moves, move)
+			}
 		}
 	}
 
