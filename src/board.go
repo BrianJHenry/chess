@@ -179,6 +179,10 @@ func ConvertPositionToString(position Position) (string, error) {
 	return fmt.Sprintf("%c%c", fileChar, rankChar), nil
 }
 
+func ConvertRuneToFile(file rune) int8 {
+	return int8(file - 'a')
+}
+
 func ConvertFileToString(file int8) string {
 	return string(rune(file + 'a'))
 }
