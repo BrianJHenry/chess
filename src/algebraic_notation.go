@@ -6,7 +6,10 @@ import (
 	"strconv"
 )
 
-func (move Move) ToAlgebraicNotation(state State) (string, error) {
+type AlgebraicNotation string
+
+// ToAlgebraicNotation converts from a move struct to standard algebraic notation.
+func (move Move) ToAlgebraicNotation(state State) (AlgebraicNotation, error) {
 	var baseString string
 	switch move.Flag {
 	case KingSideCastle:
@@ -25,12 +28,12 @@ func (move Move) ToAlgebraicNotation(state State) (string, error) {
 	updatedState := state.ExecuteMove(move)
 	isInCheck, err := updatedState.Board.IsInCheck(updatedState.Turn)
 	if err != nil {
-		return baseString, err
+		return AlgebraicNotation(baseString), err
 	}
 	if isInCheck {
 		moves, err := GenerateAllMoves(updatedState)
 		if err != nil {
-			return baseString, err
+			return AlgebraicNotation(baseString), err
 		}
 
 		if len(moves) == 0 {
@@ -40,7 +43,108 @@ func (move Move) ToAlgebraicNotation(state State) (string, error) {
 		}
 	}
 
-	return baseString, nil
+	return AlgebraicNotation(baseString), nil
+}
+
+// ToMove converts from standard algebraic notation to a move struct.
+func (algebraicNotation AlgebraicNotation) ToMove(state State) (Move, error) {
+	// Castling
+	if algebraicNotation == "O-O" || algebraicNotation == "O-O+" || algebraicNotation == "O-O#" {
+		var rank int8
+		if state.Turn == BlackTurn {
+			rank = 0
+		} else {
+			rank = 7
+		}
+		return Move{
+			Start: Position{rank, 4},
+			End:   Position{rank, 6},
+			Flag:  KingSideCastle,
+		}, nil
+	} else if algebraicNotation == "O-O-O" || algebraicNotation == "O-O-O+" || algebraicNotation == "O-O-O#" {
+		var rank int8
+		if state.Turn == BlackTurn {
+			rank = 0
+		} else {
+			rank = 7
+		}
+		return Move{
+			Start: Position{rank, 4},
+			End:   Position{rank, 2},
+			Flag:  QueenSideCastle,
+		}, nil
+	}
+
+	length := len(algebraicNotation)
+	lastChar := algebraicNotation[length-1]
+	if lastChar == '#' || lastChar == '+' {
+		length--
+	}
+
+	var flag MoveFlag = None
+	if algebraicNotation[length-2] == '=' {
+		switch algebraicNotation[length-1] {
+		case 'Q':
+			flag = PromoteToQueen
+		case 'R':
+			flag = PromoteToRook
+		case 'B':
+			flag = PromoteToBishop
+		case 'N':
+			flag = PromoteToKnight
+		}
+		length -= 2
+	}
+
+	endPosition, err := ConvertStringToPosition(string(algebraicNotation)[length-2 : length-1])
+	if err != nil {
+		return Move{}, err
+	}
+	length -= 2
+
+	isCapture := false
+	if algebraicNotation[length-1] == 'x' {
+		isCapture = true
+		length--
+	}
+
+	var start Position
+	if length == 1 {
+		start, err = findStartPosition(algebraicNotation[0], state, endPosition, -1, -1)
+		if err != nil {
+			return Move{}, err
+		}
+	} else if length == 2 {
+		if rank, err := strconv.Atoi(string(algebraicNotation[1])); err == nil {
+			start, err = findStartPosition(algebraicNotation[0], state, endPosition, int8(rank), -1)
+			if err != nil {
+				return Move{}, err
+			}
+		} else {
+			start, err = findStartPosition(algebraicNotation[0], state, endPosition, -1, ConvertRuneToFile(rune(algebraicNotation[1])))
+			if err != nil {
+				return Move{}, err
+			}
+		}
+	} else {
+		// Case where the disambiguating gives the full position
+		start, err = ConvertStringToPosition(string(algebraicNotation)[1:2])
+		if err != nil {
+			return Move{}, err
+		}
+	}
+
+	// Check for en passant
+	piece := state.Board.GetSquare(start)
+	if isCapture && piece == WhitePawn || piece == BlackPawn && state.Board.GetSquare(endPosition) == EmptySquare {
+		flag = EnPassant
+	}
+
+	return Move{
+		Start: start,
+		End:   endPosition,
+		Flag:  flag,
+	}, nil
 }
 
 func (move Move) getMoveAlgebraicNotation(board Board) (string, error) {
@@ -56,7 +160,7 @@ func (move Move) getMoveAlgebraicNotation(board Board) (string, error) {
 
 		// Capture
 		if move.Start.Y != move.End.Y {
-			base = string(ConvertFileToString(move.Start.Y)) + "x" + base
+			base = ConvertFileToString(move.Start.Y) + "x" + base
 		}
 
 		// Promotion
@@ -188,107 +292,6 @@ func getCoreAlgebraicNotation(board Board, piece Piece, move Move, visiblePositi
 
 	return base, nil
 }
-
-func AlgebraicNotationToMove(algebraicNotation string, state State) (Move, error) {
-	// Castling
-	if algebraicNotation == "O-O" || algebraicNotation == "O-O+" || algebraicNotation == "O-O#" {
-		var rank int8
-		if state.Turn == BlackTurn {
-			rank = 0
-		} else {
-			rank = 7
-		}
-		return Move{
-			Start: Position{rank, 4},
-			End:   Position{rank, 6},
-			Flag:  KingSideCastle,
-		}, nil
-	} else if algebraicNotation == "O-O-O" || algebraicNotation == "O-O-O+" || algebraicNotation == "O-O-O#" {
-		var rank int8
-		if state.Turn == BlackTurn {
-			rank = 0
-		} else {
-			rank = 7
-		}
-		return Move{
-			Start: Position{rank, 4},
-			End:   Position{rank, 2},
-			Flag:  QueenSideCastle,
-		}, nil
-	}
-
-	length := len(algebraicNotation)
-	lastChar := algebraicNotation[length-1]
-	if lastChar == '#' || lastChar == '+' {
-		length--
-	}
-
-	var flag MoveFlag = None
-	if algebraicNotation[length-2] == '=' {
-		switch algebraicNotation[length-1] {
-		case 'Q':
-			flag = PromoteToQueen
-		case 'R':
-			flag = PromoteToRook
-		case 'B':
-			flag = PromoteToBishop
-		case 'N':
-			flag = PromoteToKnight
-		}
-		length -= 2
-	}
-
-	endPosition, err := ConvertStringToPosition(algebraicNotation[length-2 : length-1])
-	if err != nil {
-		return Move{}, err
-	}
-	length -= 2
-
-	isCapture := false
-	if algebraicNotation[length-1] == 'x' {
-		isCapture = true
-		length--
-	}
-
-	var start Position
-	if length == 1 {
-		start, err = findStartPosition(algebraicNotation[0], state, endPosition, -1, -1)
-		if err != nil {
-			return Move{}, err
-		}
-	} else if length == 2 {
-		if rank, err := strconv.Atoi(string(algebraicNotation[1])); err == nil {
-			start, err = findStartPosition(algebraicNotation[0], state, endPosition, int8(rank), -1)
-			if err != nil {
-				return Move{}, err
-			}
-		} else {
-			start, err = findStartPosition(algebraicNotation[0], state, endPosition, -1, ConvertRuneToFile(rune(algebraicNotation[1])))
-			if err != nil {
-				return Move{}, err
-			}
-		}
-	} else {
-		// Case where the disambiguating gives the full position
-		start, err = ConvertStringToPosition(algebraicNotation[1:2])
-		if err != nil {
-			return Move{}, err
-		}
-	}
-
-	// Check for en passant
-	piece := state.Board.GetSquare(start)
-	if isCapture && piece == WhitePawn || piece == BlackPawn && state.Board.GetSquare(endPosition) == EmptySquare {
-		flag = EnPassant
-	}
-
-	return Move{
-		Start: start,
-		End:   endPosition,
-		Flag:  flag,
-	}, nil
-}
-
 func findStartPosition(charPiece byte, state State, end Position, hintX, hintY int8) (Position, error) {
 	piece := getPiece(charPiece, state.Turn)
 	switch piece {
