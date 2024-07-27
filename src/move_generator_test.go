@@ -30,7 +30,7 @@ func TestMoveGenerationAndExecution(t *testing.T) {
 				t.Errorf(err.Error())
 				continue
 			}
-			moveLookup[algebraic] = move
+			moveLookup[string(algebraic)] = move
 		}
 
 		// Check that all moves were properly found
