@@ -1,8 +1,6 @@
 package chess
 
 import (
-	"errors"
-	"fmt"
 	"testing"
 )
 
@@ -17,52 +15,35 @@ func TestMoveGenerationAndExecution(t *testing.T) {
 		t.Fatalf(err.Error())
 	}
 
-	errorCollection := []error{}
 	for _, test := range data {
 		moves, err := GenerateAllMoves(test.Initial)
 		if err != nil {
-			errorCollection = append(errorCollection, err)
+			t.Error(err.Error())
 			continue
 		}
 
-		nextStates := make([]StateAndPreviousMove, len(moves))
-		for i, move := range moves {
-			nextState := test.Initial.ExecuteMove(move)
-			moveString, err := move.ToAlgebraicNotation(test.Initial)
+		// Execute and create move lookup
+		moveLookup := make(map[string]Move, len(moves))
+		for _, move := range moves {
+			algebraic, err := move.ToAlgebraicNotation(test.Initial)
 			if err != nil {
-				errorCollection = append(errorCollection, err)
+				t.Errorf(err.Error())
+				continue
 			}
-
-			nextStates[i] = StateAndPreviousMove{
-				State: nextState,
-				Move:  moveString,
-			}
+			moveLookup[algebraic] = move
 		}
 
-		// TODO: come back and refine data structure/comparison; N^2 is ugly
+		// Check that all moves were properly found
 		for _, result := range test.Results {
-			isBoardMatched := false
-			for _, nextState := range nextStates {
-				if result.Result == nextState.State {
-					isBoardMatched = true
-
-					// Check that move notation is correct
-					if result.Move != nextState.Move {
-						errorCollection = append(errorCollection, fmt.Errorf("move notation incorrect: expected=%s ; actual=%s", result.Move, nextState.Move))
-					}
-					break
-				}
+			move, ok := moveLookup[result.Move]
+			if !ok {
+				t.Errorf("move not generated %s", result.Move)
 			}
 
-			if !isBoardMatched {
-				errorCollection = append(errorCollection, fmt.Errorf("state not found for move %s: %s\nInitial:\n%s\nResult\n%s", test.Description, result.Move, test.Initial.Board.GetPrintableBoard(), result.Result.Board.GetPrintableBoard()))
+			generatedState := test.Initial.ExecuteMove(move)
+			if generatedState != result.Result {
+				t.Errorf("incorrect resultant state for move %s\nexpected=\n%s\nactual=\n%s", result.Move, result.Result.Board.GetPrintableBoard(), generatedState.Board.GetPrintableBoard())
 			}
-
 		}
-	}
-
-	err = errors.Join(errorCollection...)
-	if err != nil {
-		t.Fatalf("Errors: %d\n%s", len(errorCollection), err.Error())
 	}
 }
