@@ -403,7 +403,7 @@ func findStartPositionForVisions(piece Piece, board Board, hintX, hintY int8, vi
 }
 
 // getPiece retrieves the Piece type based on the turn and first character in the algebraic notation version of the move.
-func getPiece(piece byte, turn ActiveColor) Piece {
+func getPiece(piece byte, turn Color) Piece {
 	switch piece {
 	case 'K':
 		if turn == Black {

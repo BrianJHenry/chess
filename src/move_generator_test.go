@@ -33,6 +33,10 @@ func TestMoveGenerationAndExecution(t *testing.T) {
 			moveLookup[string(algebraic)] = move
 		}
 
+		if len(moveLookup) != len(test.Results) {
+			t.Errorf("unexpected move count: expected=%d; actual=%d", len(test.Results), len(moveLookup))
+		}
+
 		// Check that all moves were properly found
 		for _, result := range test.Results {
 			move, ok := moveLookup[result.Move]

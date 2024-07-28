@@ -1,10 +1,10 @@
 package chess
 
-type ActiveColor bool
+type Color bool
 
 const (
-	White ActiveColor = false
-	Black ActiveColor = true
+	White Color = false
+	Black Color = true
 )
 
 type State struct {
@@ -13,7 +13,7 @@ type State struct {
 	WhiteCanCastleQueenSide bool
 	BlackCanCastleKingSide  bool
 	BlackCanCastleQueenSide bool
-	ActiveColor             ActiveColor
+	ActiveColor             Color
 	EnPassantPosition       PositionOpt
 }
 

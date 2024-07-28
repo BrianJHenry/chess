@@ -69,35 +69,31 @@ func GenerateAllMoves(state State) (moves []Move, err error) {
 func GenerateKingMoves(state State, position Position) (moves []Move) {
 	piece := state.Board[position.X][position.Y]
 
-	// Normal directional moves
-	for _, offset := range bishopDirections {
-		pos := AddPositions(position, offset)
-		if isInBounds(pos) &&
-			isValidSquare(piece, state.Board[pos.X][pos.Y]) &&
-			!IsSquareAttacked(state.Board, pos, state.ActiveColor) {
-			moves = append(moves, Move{
-				position,
-				pos,
-				None,
-			})
-		}
-	}
+	directions := make([]Position, 8)
+	directions = append(directions, bishopDirections[:]...)
+	directions = append(directions, rookDirections[:]...)
 
-	for _, offset := range rookDirections {
+	// Normal directional moves
+	for _, offset := range directions {
 		pos := AddPositions(position, offset)
 		if isInBounds(pos) &&
-			isValidSquare(piece, state.Board[pos.X][pos.Y]) &&
-			!IsSquareAttacked(state.Board, pos, state.ActiveColor) {
-			moves = append(moves, Move{
+			isValidSquare(piece, state.Board[pos.X][pos.Y]) {
+
+			possibleMove := Move{
 				position,
 				pos,
 				None,
-			})
+			}
+
+			// Check that this move does not lead to the king being put into check
+			if !IsSquareAttacked(state.Board.DoMove(possibleMove), pos, state.ActiveColor) {
+				moves = append(moves, possibleMove)
+			}
 		}
 	}
 
 	// Castling
-	if state.ActiveColor == Black {
+	if state.ActiveColor == Black && !IsSquareAttacked(state.Board, position, Black) {
 
 		kingSidePositionFinish := Position{0, 6}
 		kingSidePositionSkip := Position{0, 5}
@@ -134,7 +130,7 @@ func GenerateKingMoves(state State, position Position) (moves []Move) {
 				QueenSideCastle,
 			})
 		}
-	} else {
+	} else if state.ActiveColor == White && !IsSquareAttacked(state.Board, position, White) {
 
 		kingSidePositionFinish := Position{7, 6}
 		kingSidePositionSkip := Position{7, 5}
@@ -312,7 +308,7 @@ func GeneratePawnMoves(state State, position, kingPosition Position) (moves []Mo
 }
 
 // Checks if a square is attacked by the opposite color to defenderSide
-func IsSquareAttacked(board Board, position Position, defenderSide ActiveColor) bool {
+func IsSquareAttacked(board Board, position Position, defenderSide Color) bool {
 
 	// Check for attacks by pawn
 	var pawnDirection int8
@@ -483,7 +479,7 @@ func getKnightVision(position Position) []Position {
 }
 
 // findKing returns the position of the king with the specified color.
-func findKing(board Board, color ActiveColor) (kingPosition Position, err error) {
+func findKing(board Board, color Color) (kingPosition Position, err error) {
 	var square Piece
 
 	var i int8
@@ -505,7 +501,7 @@ func findKing(board Board, color ActiveColor) (kingPosition Position, err error)
 }
 
 // isInCheck returns whether the given color's king is in check.
-func isInCheck(board Board, color ActiveColor) (bool, error) {
+func isInCheck(board Board, color Color) (bool, error) {
 	kingPosition, err := findKing(board, color)
 	if err != nil {
 		return false, err

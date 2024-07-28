@@ -75,7 +75,7 @@ func fenToState(fenString string) (State, error) {
 	}
 
 	// Active color
-	var activeColor ActiveColor
+	var activeColor Color
 	if color == "w" {
 		activeColor = White
 	} else if color == "b" {
