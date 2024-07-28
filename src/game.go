@@ -21,7 +21,7 @@ func (game Game) DoMove(move Move) (Game, error) {
 	checkmate := false
 	stalemate := false
 	if len(possibleMoves) == 0 {
-		isInCheck, err := IsInCheck(state.Board, state.ActiveColor)
+		isInCheck, err := isInCheck(state.Board, state.ActiveColor)
 		if err != nil {
 			return Game{}, err
 		}

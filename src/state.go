@@ -3,8 +3,8 @@ package chess
 type ActiveColor bool
 
 const (
-	WhiteTurn ActiveColor = false
-	BlackTurn ActiveColor = true
+	White ActiveColor = false
+	Black ActiveColor = true
 )
 
 type State struct {
@@ -24,7 +24,7 @@ func (state State) DoMove(move Move) State {
 	blackCanCastleKingSide := state.BlackCanCastleKingSide
 	blackCanCastleQueenSide := state.BlackCanCastleQueenSide
 
-	if state.ActiveColor == BlackTurn {
+	if state.ActiveColor == Black {
 		if (move.Start == Position{0, 4}) {
 			blackCanCastleKingSide = false
 			blackCanCastleQueenSide = false
@@ -47,8 +47,8 @@ func (state State) DoMove(move Move) State {
 	enPassantSquare := PositionOpt{
 		Ok: false,
 	}
-	if (state.ActiveColor == BlackTurn && state.Board.GetSquare(move.Start) == BlackPawn && (move.End.X-move.Start.X == 2)) ||
-		(state.ActiveColor == WhiteTurn && state.Board.GetSquare(move.Start) == WhitePawn && (move.Start.X-move.End.X == 2)) {
+	if (state.ActiveColor == Black && state.Board.GetSquare(move.Start) == BlackPawn && (move.End.X-move.Start.X == 2)) ||
+		(state.ActiveColor == White && state.Board.GetSquare(move.Start) == WhitePawn && (move.Start.X-move.End.X == 2)) {
 
 		enPassantSquare.Ok = true
 		enPassantSquare.Position = Position{

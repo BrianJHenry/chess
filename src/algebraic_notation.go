@@ -27,7 +27,7 @@ func (move Move) ToAlgebraicNotation(state State) (AlgebraicNotation, error) {
 
 	// Check and mate
 	updatedState := state.DoMove(move)
-	isInCheck, err := IsInCheck(updatedState.Board, updatedState.ActiveColor)
+	isInCheck, err := isInCheck(updatedState.Board, updatedState.ActiveColor)
 	if err != nil {
 		return AlgebraicNotation(baseString), err
 	}
@@ -52,7 +52,7 @@ func (algebraicNotation AlgebraicNotation) ToMove(state State) (Move, error) {
 	// Castling
 	if algebraicNotation == "O-O" || algebraicNotation == "O-O+" || algebraicNotation == "O-O#" {
 		var rank int8
-		if state.ActiveColor == BlackTurn {
+		if state.ActiveColor == Black {
 			rank = 0
 		} else {
 			rank = 7
@@ -64,7 +64,7 @@ func (algebraicNotation AlgebraicNotation) ToMove(state State) (Move, error) {
 		}, nil
 	} else if algebraicNotation == "O-O-O" || algebraicNotation == "O-O-O+" || algebraicNotation == "O-O-O#" {
 		var rank int8
-		if state.ActiveColor == BlackTurn {
+		if state.ActiveColor == Black {
 			rank = 0
 		} else {
 			rank = 7
@@ -368,7 +368,7 @@ func findStartPosition(charPiece byte, state State, end Position, hintX, hintY i
 		}
 		return start, nil
 	case WhiteKing, BlackKing:
-		start, err := FindKing(state.Board, state.ActiveColor)
+		start, err := findKing(state.Board, state.ActiveColor)
 		if err != nil {
 			return Position{}, err
 		}
@@ -406,37 +406,37 @@ func findStartPositionForVisions(piece Piece, board Board, hintX, hintY int8, vi
 func getPiece(piece byte, turn ActiveColor) Piece {
 	switch piece {
 	case 'K':
-		if turn == BlackTurn {
+		if turn == Black {
 			return BlackKing
 		} else {
 			return WhiteKing
 		}
 	case 'Q':
-		if turn == BlackTurn {
+		if turn == Black {
 			return BlackQueen
 		} else {
 			return WhiteQueen
 		}
 	case 'R':
-		if turn == BlackTurn {
+		if turn == Black {
 			return BlackRook
 		} else {
 			return WhiteRook
 		}
 	case 'B':
-		if turn == BlackTurn {
+		if turn == Black {
 			return BlackBishop
 		} else {
 			return WhiteBishop
 		}
 	case 'N':
-		if turn == BlackTurn {
+		if turn == Black {
 			return BlackKnight
 		} else {
 			return WhiteKnight
 		}
 	default: // pawn
-		if turn == BlackTurn {
+		if turn == Black {
 			return BlackPawn
 		} else {
 			return WhitePawn

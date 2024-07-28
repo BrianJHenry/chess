@@ -77,9 +77,9 @@ func fenToState(fenString string) (State, error) {
 	// Active color
 	var activeColor ActiveColor
 	if color == "w" {
-		activeColor = WhiteTurn
+		activeColor = White
 	} else if color == "b" {
-		activeColor = BlackTurn
+		activeColor = Black
 	}
 
 	// Castling rights
