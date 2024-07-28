@@ -97,11 +97,25 @@ func (algebraicNotation AlgebraicNotation) ToMove(state State) (Move, error) {
 		length -= 2
 	}
 
-	endPosition, err := stringToPosition(string(algebraicNotation)[length-2 : length-1])
+	an := string(algebraicNotation)
+	endPosition, err := stringToPosition(an[length-2 : length])
 	if err != nil {
 		return Move{}, err
 	}
 	length -= 2
+
+	if length == 0 {
+		piece := getPiece('P', state.ActiveColor)
+		start, err := findStartPosition(piece, state, endPosition, -1, -1)
+		if err != nil {
+			return Move{}, err
+		}
+		return Move{
+			start,
+			endPosition,
+			None,
+		}, nil
+	}
 
 	isCapture := false
 	if algebraicNotation[length-1] == 'x' {
@@ -109,15 +123,26 @@ func (algebraicNotation AlgebraicNotation) ToMove(state State) (Move, error) {
 		length--
 	}
 
+	piece := getPiece(algebraicNotation[0], state.ActiveColor)
 	var start Position
-	if length == 1 {
-		start, err = findStartPosition(algebraicNotation[0], state, endPosition, -1, -1)
+	if length == 1 && piece != WhitePawn && piece != BlackPawn {
+		start, err = findStartPosition(piece, state, endPosition, -1, -1)
+		if err != nil {
+			return Move{}, err
+		}
+	} else if length == 1 {
+		file, err := runeToFile(rune(algebraicNotation[0]))
+		if err != nil {
+			return Move{}, err
+		}
+
+		start, err = findStartPosition(piece, state, endPosition, -1, file)
 		if err != nil {
 			return Move{}, err
 		}
 	} else if length == 2 {
 		if rank, err := strconv.Atoi(string(algebraicNotation[1])); err == nil {
-			start, err = findStartPosition(algebraicNotation[0], state, endPosition, int8(rank), -1)
+			start, err = findStartPosition(piece, state, endPosition, int8(rank), -1)
 			if err != nil {
 				return Move{}, err
 			}
@@ -126,7 +151,7 @@ func (algebraicNotation AlgebraicNotation) ToMove(state State) (Move, error) {
 			if err != nil {
 				return Move{}, err
 			}
-			start, err = findStartPosition(algebraicNotation[0], state, endPosition, -1, file)
+			start, err = findStartPosition(piece, state, endPosition, -1, file)
 			if err != nil {
 				return Move{}, err
 			}
@@ -140,8 +165,7 @@ func (algebraicNotation AlgebraicNotation) ToMove(state State) (Move, error) {
 	}
 
 	// Check for en passant
-	piece := state.Board.GetSquare(start)
-	if isCapture && piece == WhitePawn || piece == BlackPawn && state.Board.GetSquare(endPosition) == EmptySquare {
+	if isCapture && (piece == WhitePawn || piece == BlackPawn) && state.Board.GetSquare(endPosition) == EmptySquare {
 		flag = EnPassant
 	}
 
@@ -313,8 +337,7 @@ func getPositionalAlgebraicNotation(board Board, piece Piece, move Move, visible
 }
 
 // findStartPosition parses move.Start from a move in algebraic notation.
-func findStartPosition(charPiece byte, state State, end Position, hintX, hintY int8) (Position, error) {
-	piece := getPiece(charPiece, state.ActiveColor)
+func findStartPosition(piece Piece, state State, end Position, hintX, hintY int8) (Position, error) {
 	switch piece {
 	case WhitePawn, BlackPawn:
 		var searchDirection int8
@@ -374,7 +397,7 @@ func findStartPosition(charPiece byte, state State, end Position, hintX, hintY i
 		}
 		return start, nil
 	}
-	return Position{}, fmt.Errorf("invalid piece: %c", rune(charPiece))
+	return Position{}, errors.New("invalid piece")
 }
 
 // findStartPositionForVisions retrieves move.Start based on the possible moves of the moved piece type.

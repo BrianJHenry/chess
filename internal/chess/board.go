@@ -18,6 +18,20 @@ type PositionOpt struct {
 	Ok       bool
 }
 
+// InitialiseBoard returns the default starting position of a chess board.
+func InitialiseBoard() Board {
+	return Board{
+		{BlackRook, BlackKnight, BlackBishop, BlackQueen, BlackKing, BlackBishop, BlackKnight, BlackRook},
+		{BlackPawn, BlackPawn, BlackPawn, BlackPawn, BlackPawn, BlackPawn, BlackPawn, BlackPawn},
+		{EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare},
+		{EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare},
+		{EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare},
+		{EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare},
+		{WhitePawn, WhitePawn, WhitePawn, WhitePawn, WhitePawn, WhitePawn, WhitePawn, WhitePawn},
+		{WhiteRook, WhiteKnight, WhiteBishop, WhiteQueen, WhiteKing, WhiteBishop, WhiteKnight, WhiteRook},
+	}
+}
+
 // PositionsToOptionalPositions converts a slice of Position ot a slice of PositionOpt where Ok is true.
 func PositionsToOptionalPositions(positions []Position) []PositionOpt {
 	optPositions := make([]PositionOpt, len(positions))
@@ -36,31 +50,18 @@ func PositionsToOptionalPositions(positions []Position) []PositionOpt {
 func BoardToDisplayString(board Board) string {
 	stringBoard := ""
 	for i := 0; i < 8; i++ {
-		stringBoard += "+----+----+----+----+----+----+----+----+\n"
-		stringBoard += "|    |    |    |    |    |    |    |    |\n"
+		stringBoard += "  +----+----+----+----+----+----+----+----+\n"
+		stringBoard += "  |    |    |    |    |    |    |    |    |\n"
+		stringBoard += fmt.Sprintf("%d ", 8-i)
 		for j := 0; j < 8; j++ {
 			stringBoard += fmt.Sprintf("| %s ", PieceToDisplayString(board[i][j]))
 		}
 		stringBoard += "|\n"
-		stringBoard += "|    |    |    |    |    |    |    |    |\n"
-		stringBoard += "|    |    |    |    |    |    |    |    |\n"
+		stringBoard += "  |    |    |    |    |    |    |    |    |\n"
 	}
-	stringBoard += "+----+----+----+----+----+----+----+----+\n"
+	stringBoard += "  +----+----+----+----+----+----+----+----+\n"
+	stringBoard += "    a    b    c    d    e    f    g    h"
 	return stringBoard
-}
-
-// InitialPosition returns the default starting position of a chess board.
-func InitialPosition() Board {
-	return Board{
-		{BlackRook, BlackKnight, BlackBishop, BlackQueen, BlackKing, BlackBishop, BlackKnight, BlackRook},
-		{BlackPawn, BlackPawn, BlackPawn, BlackPawn, BlackPawn, BlackPawn, BlackPawn, BlackPawn},
-		{EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare},
-		{EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare},
-		{EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare},
-		{EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare, EmptySquare},
-		{WhitePawn, WhitePawn, WhitePawn, WhitePawn, WhitePawn, WhitePawn, WhitePawn, WhitePawn},
-		{WhiteRook, WhiteKnight, WhiteBishop, WhiteQueen, WhiteKing, WhiteBishop, WhiteKnight, WhiteRook},
-	}
 }
 
 // DoMove takes in a board and a move and executes the move, returning the updated board.

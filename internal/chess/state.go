@@ -17,6 +17,18 @@ type State struct {
 	EnPassantPosition       PositionOpt
 }
 
+func InitialiseState() State {
+	return State{
+		InitialiseBoard(),
+		true,
+		true,
+		true,
+		true,
+		White,
+		PositionOpt{Ok: false},
+	}
+}
+
 // DoMove takes in a state and a move and executes the move, returning the updated state.
 func (state State) DoMove(move Move) State {
 	whiteCanCastleKingSide := state.WhiteCanCastleKingSide

@@ -5,7 +5,24 @@ type Game struct {
 	Moves         []Move
 	Checkmate     bool
 	Stalemate     bool
-	possibleMoves []Move
+	PossibleMoves []Move
+}
+
+func InitialiseGame() Game {
+	initialState := InitialiseState()
+
+	possibleMoves, err := GenerateAllMoves(initialState)
+	if err != nil {
+		panic("call to GenerateAllMoves should never fail in the opening position.")
+	}
+
+	return Game{
+		State:         initialState,
+		Moves:         []Move{},
+		Checkmate:     false,
+		Stalemate:     false,
+		PossibleMoves: possibleMoves,
+	}
 }
 
 // DoMove takes in a Game object and a Move and executes the move, returning the updated Game object.
