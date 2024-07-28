@@ -1,41 +1,45 @@
 package chess
 
 import (
-	"errors"
 	"fmt"
 )
 
+// Board represents a chess board.
 type Board [8][8]Piece
 
+// Position represents a location on a Board.
 type Position struct {
 	X, Y int8
 }
 
-type NullablePosition struct {
+// PositionOpt represents a Position that may or may not be valid.
+type PositionOpt struct {
 	Position Position
-	Valid    bool
+	Ok       bool
 }
 
-func ConvertToNullablePositions(positions []Position) []NullablePosition {
-	nullables := make([]NullablePosition, len(positions))
+// PositionsToOptionalPositions converts a slice of Position ot a slice of PositionOpt where Ok is true.
+func PositionsToOptionalPositions(positions []Position) []PositionOpt {
+	optPositions := make([]PositionOpt, len(positions))
 
 	for i, pos := range positions {
-		nullables[i] = NullablePosition{
-			Valid:    true,
+		optPositions[i] = PositionOpt{
+			Ok:       true,
 			Position: pos,
 		}
 	}
 
-	return nullables
+	return optPositions
 }
 
-func (board Board) GetPrintableBoard() string {
+// BoardToDisplayString converts a position on the board to an visual representation in ascii.
+func BoardToDisplayString(board Board) string {
 	stringBoard := ""
 	for i := 0; i < 8; i++ {
 		stringBoard += "+----+----+----+----+----+----+----+----+\n"
 		stringBoard += "|    |    |    |    |    |    |    |    |\n"
 		for j := 0; j < 8; j++ {
-			stringBoard += fmt.Sprintf("| %s ", board[i][j].GetPrintablePiece())
+			stringBoard += fmt.Sprintf("| %s ", PieceToDisplayString(board[i][j]))
 		}
 		stringBoard += "|\n"
 		stringBoard += "|    |    |    |    |    |    |    |    |\n"
@@ -45,6 +49,7 @@ func (board Board) GetPrintableBoard() string {
 	return stringBoard
 }
 
+// InitialPosition returns the default starting position of a chess board.
 func InitialPosition() Board {
 	return Board{
 		{BlackRook, BlackKnight, BlackBishop, BlackQueen, BlackKing, BlackBishop, BlackKnight, BlackRook},
@@ -58,8 +63,8 @@ func InitialPosition() Board {
 	}
 }
 
-// Update board for move
-func (board Board) ExecuteMove(move Move) Board {
+// DoMove takes in a board and a move and executes the move, returning the updated board.
+func (board Board) DoMove(move Move) Board {
 	piece := board[move.Start.X][move.Start.Y]
 
 	switch move.Flag {
@@ -103,90 +108,17 @@ func (board Board) ExecuteMove(move Move) Board {
 	return board
 }
 
+// GetSquare returns the piece at the position.
 func (board Board) GetSquare(position Position) Piece {
 	return board[position.X][position.Y]
 }
 
-func (board Board) FindKing(color Turn) (kingPosition Position, err error) {
-	var square Piece
-
-	var i int8
-	var j int8
-	for i = 0; i < 8; i++ {
-		for j = 0; j < 8; j++ {
-			kingPosition = Position{i, j}
-			square = board.GetSquare(kingPosition)
-
-			if (color == BlackTurn && square == BlackKing) ||
-				color == WhiteTurn && square == WhiteKing {
-
-				return kingPosition, nil
-			}
-		}
-	}
-
-	return Position{}, errors.New("missing king")
-}
-
-func (board Board) IsInCheck(color Turn) (bool, error) {
-	kingPosition, err := board.FindKing(color)
-	if err != nil {
-		return false, err
-	}
-
-	return IsSquareAttacked(board, kingPosition, color), nil
-}
-
-func (position Position) AddOffset(offset Position) Position {
+// AddPositions returns the component-wise addition of two positions.
+func AddPositions(position, offset Position) Position {
 	return Position{position.X + offset.X, position.Y + offset.Y}
 }
 
-func (position Position) MultiplyScalar(scalar int8) Position {
+// MultiplyScalar multiplies each component of the position by the scalar value.
+func MultiplyScalar(position Position, scalar int8) Position {
 	return Position{position.X * scalar, position.Y * scalar}
-}
-
-// Ex. A1 -> 7, 0; C4 => 4, 2
-func ConvertStringToPosition(stringPosition string) (Position, error) {
-	if len(stringPosition) != 2 {
-		return Position{}, errors.New("position codes should be of length 2")
-	}
-
-	rankChar := stringPosition[1]
-	rank := 7 - (rankChar - '1')
-
-	fileChar := stringPosition[0]
-	file := fileChar - 'a'
-	position := Position{
-		int8(rank),
-		int8(file),
-	}
-
-	if isInBounds(position) {
-		return position, nil
-	} else {
-		return position, fmt.Errorf("invalid position: %d, %d", position.X, position.Y)
-	}
-}
-
-func ConvertPositionToString(position Position) (string, error) {
-	if !isInBounds(position) {
-		return "", fmt.Errorf("position out of bounds: %d, %d", position.X, position.Y)
-	}
-
-	rankChar := (7 - position.X) + '1'
-	fileChar := position.Y + 'a'
-
-	return fmt.Sprintf("%c%c", fileChar, rankChar), nil
-}
-
-func ConvertRuneToFile(file rune) int8 {
-	return int8(file - 'a')
-}
-
-func ConvertFileToString(file int8) string {
-	return string(rune(file + 'a'))
-}
-
-func ConvertRankToString(rank int8) string {
-	return string(rune(7 - rank + '1'))
 }

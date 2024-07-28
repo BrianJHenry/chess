@@ -1,10 +1,10 @@
 package chess
 
-type Turn bool
+type ActiveColor bool
 
 const (
-	WhiteTurn Turn = false
-	BlackTurn Turn = true
+	WhiteTurn ActiveColor = false
+	BlackTurn ActiveColor = true
 )
 
 type State struct {
@@ -13,17 +13,18 @@ type State struct {
 	WhiteCanCastleQueenSide bool
 	BlackCanCastleKingSide  bool
 	BlackCanCastleQueenSide bool
-	Turn                    Turn
-	EnPassantPosition       NullablePosition
+	ActiveColor             ActiveColor
+	EnPassantPosition       PositionOpt
 }
 
-func (state State) ExecuteMove(move Move) State {
+// DoMove takes in a state and a move and executes the move, returning the updated state.
+func (state State) DoMove(move Move) State {
 	whiteCanCastleKingSide := state.WhiteCanCastleKingSide
 	whiteCanCastleQueenSide := state.WhiteCanCastleQueenSide
 	blackCanCastleKingSide := state.BlackCanCastleKingSide
 	blackCanCastleQueenSide := state.BlackCanCastleQueenSide
 
-	if state.Turn == BlackTurn {
+	if state.ActiveColor == BlackTurn {
 		if (move.Start == Position{0, 4}) {
 			blackCanCastleKingSide = false
 			blackCanCastleQueenSide = false
@@ -43,13 +44,13 @@ func (state State) ExecuteMove(move Move) State {
 		}
 	}
 
-	enPassantSquare := NullablePosition{
-		Valid: false,
+	enPassantSquare := PositionOpt{
+		Ok: false,
 	}
-	if (state.Turn == BlackTurn && state.Board.GetSquare(move.Start) == BlackPawn && (move.End.X-move.Start.X == 2)) ||
-		(state.Turn == WhiteTurn && state.Board.GetSquare(move.Start) == WhitePawn && (move.Start.X-move.End.X == 2)) {
+	if (state.ActiveColor == BlackTurn && state.Board.GetSquare(move.Start) == BlackPawn && (move.End.X-move.Start.X == 2)) ||
+		(state.ActiveColor == WhiteTurn && state.Board.GetSquare(move.Start) == WhitePawn && (move.Start.X-move.End.X == 2)) {
 
-		enPassantSquare.Valid = true
+		enPassantSquare.Ok = true
 		enPassantSquare.Position = Position{
 			X: (move.Start.X + move.End.X) / 2,
 			Y: move.End.Y,
@@ -57,12 +58,12 @@ func (state State) ExecuteMove(move Move) State {
 	}
 
 	return State{
-		state.Board.ExecuteMove(move),
+		state.Board.DoMove(move),
 		whiteCanCastleKingSide,
 		whiteCanCastleQueenSide,
 		blackCanCastleKingSide,
 		blackCanCastleQueenSide,
-		!state.Turn,
+		!state.ActiveColor,
 		enPassantSquare,
 	}
 }

@@ -8,8 +8,9 @@ type Game struct {
 	possibleMoves []Move
 }
 
-func (game Game) ExecuteMove(move Move) (Game, error) {
-	state := game.State.ExecuteMove(move)
+// DoMove takes in a Game object and a Move and executes the move, returning the updated Game object.
+func (game Game) DoMove(move Move) (Game, error) {
+	state := game.State.DoMove(move)
 	moves := append(game.Moves, move)
 
 	possibleMoves, err := GenerateAllMoves(state)
@@ -20,7 +21,7 @@ func (game Game) ExecuteMove(move Move) (Game, error) {
 	checkmate := false
 	stalemate := false
 	if len(possibleMoves) == 0 {
-		isInCheck, err := state.Board.IsInCheck(state.Turn)
+		isInCheck, err := IsInCheck(state.Board, state.ActiveColor)
 		if err != nil {
 			return Game{}, err
 		}

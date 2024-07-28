@@ -1,5 +1,7 @@
 package chess
 
+import "errors"
+
 var rookDirections [4]Position = [4]Position{
 	{X: 1, Y: 0},
 	{X: -1, Y: 0},
@@ -34,7 +36,7 @@ func GenerateAllMoves(state State) (moves []Move, err error) {
 	var j int8
 
 	// TODO: improve this!
-	kingPosition, err := state.Board.FindKing(state.Turn)
+	kingPosition, err := FindKing(state.Board, state.ActiveColor)
 	if err != nil {
 		return moves, err
 	}
@@ -44,7 +46,7 @@ func GenerateAllMoves(state State) (moves []Move, err error) {
 			position = Position{i, j}
 			square = state.Board.GetSquare(position)
 
-			if (state.Turn == BlackTurn && square <= 0) || (state.Turn == WhiteTurn && square >= 0) {
+			if (state.ActiveColor == BlackTurn && square <= 0) || (state.ActiveColor == WhiteTurn && square >= 0) {
 				continue
 			}
 
@@ -77,10 +79,10 @@ func GenerateKingMoves(state State, position Position) (moves []Move) {
 
 	// Normal moves
 	for _, offset := range bishopDirections {
-		pos := position.AddOffset(offset)
+		pos := AddPositions(position, offset)
 		if isInBounds(pos) &&
 			isValidSquare(piece, state.Board[pos.X][pos.Y]) &&
-			!IsSquareAttacked(state.Board, pos, state.Turn) {
+			!IsSquareAttacked(state.Board, pos, state.ActiveColor) {
 			moves = append(moves, Move{
 				position,
 				pos,
@@ -90,10 +92,10 @@ func GenerateKingMoves(state State, position Position) (moves []Move) {
 	}
 
 	for _, offset := range rookDirections {
-		pos := position.AddOffset(offset)
+		pos := AddPositions(position, offset)
 		if isInBounds(pos) &&
 			isValidSquare(piece, state.Board[pos.X][pos.Y]) &&
-			!IsSquareAttacked(state.Board, pos, state.Turn) {
+			!IsSquareAttacked(state.Board, pos, state.ActiveColor) {
 			moves = append(moves, Move{
 				position,
 				pos,
@@ -103,7 +105,7 @@ func GenerateKingMoves(state State, position Position) (moves []Move) {
 	}
 
 	// Castling
-	if state.Turn == BlackTurn {
+	if state.ActiveColor == BlackTurn {
 
 		kingSidePositionFinish := Position{0, 6}
 		kingSidePositionSkip := Position{0, 5}
@@ -221,8 +223,8 @@ func GenerateKnightMoves(state State, position, kingPosition Position) (moves []
 func GeneratePawnMoves(state State, position, kingPosition Position) (moves []Move) {
 
 	isEnemyPiece := func(piecePosition Position) bool {
-		return (state.Turn == BlackTurn && state.Board.GetSquare(piecePosition) < 0) ||
-			(state.Turn == WhiteTurn && state.Board.GetSquare(piecePosition) > 0)
+		return (state.ActiveColor == BlackTurn && state.Board.GetSquare(piecePosition) < 0) ||
+			(state.ActiveColor == WhiteTurn && state.Board.GetSquare(piecePosition) > 0)
 	}
 
 	checkIllegalMove := getIllegalMoveChecker(state, kingPosition)
@@ -230,7 +232,7 @@ func GeneratePawnMoves(state State, position, kingPosition Position) (moves []Mo
 	isPromotion := false
 	var pawnDirection int8
 	var doublePushAvailable bool
-	if state.Turn == BlackTurn {
+	if state.ActiveColor == BlackTurn {
 		pawnDirection = 1
 		if position.X == 6 {
 			isPromotion = true
@@ -245,7 +247,7 @@ func GeneratePawnMoves(state State, position, kingPosition Position) (moves []Mo
 	}
 
 	// Normal moves
-	pushPosition := position.AddOffset(Position{pawnDirection, 0})
+	pushPosition := AddPositions(position, Position{pawnDirection, 0})
 	var move Move
 	if isInBounds(pushPosition) && state.Board.GetSquare(pushPosition) == EmptySquare {
 		move = Move{
@@ -264,7 +266,7 @@ func GeneratePawnMoves(state State, position, kingPosition Position) (moves []Mo
 
 		// Double push
 		if doublePushAvailable {
-			doublePushPosition := position.AddOffset(Position{pawnDirection * 2, 0})
+			doublePushPosition := AddPositions(position, Position{pawnDirection * 2, 0})
 			if isInBounds(doublePushPosition) && state.Board.GetSquare(doublePushPosition) == EmptySquare {
 				move = Move{
 					position,
@@ -280,8 +282,8 @@ func GeneratePawnMoves(state State, position, kingPosition Position) (moves []Mo
 	}
 
 	capturePositions := [2]Position{
-		position.AddOffset(Position{pawnDirection, 1}),
-		position.AddOffset(Position{pawnDirection, -1}),
+		AddPositions(position, Position{pawnDirection, 1}),
+		AddPositions(position, Position{pawnDirection, -1}),
 	}
 
 	for _, capturePosition := range capturePositions {
@@ -299,7 +301,7 @@ func GeneratePawnMoves(state State, position, kingPosition Position) (moves []Mo
 					moves = append(moves, move)
 				}
 			}
-		} else if state.EnPassantPosition.Valid && capturePosition == state.EnPassantPosition.Position {
+		} else if state.EnPassantPosition.Ok && capturePosition == state.EnPassantPosition.Position {
 			move = Move{
 				position,
 				capturePosition,
@@ -315,8 +317,40 @@ func GeneratePawnMoves(state State, position, kingPosition Position) (moves []Mo
 	return
 }
 
+// FindKing returns the position of the king with the specified color.
+func FindKing(board Board, color ActiveColor) (kingPosition Position, err error) {
+	var square Piece
+
+	var i int8
+	var j int8
+	for i = 0; i < 8; i++ {
+		for j = 0; j < 8; j++ {
+			kingPosition = Position{i, j}
+			square = board.GetSquare(kingPosition)
+
+			if (color == BlackTurn && square == BlackKing) ||
+				color == WhiteTurn && square == WhiteKing {
+
+				return kingPosition, nil
+			}
+		}
+	}
+
+	return Position{}, errors.New("missing king")
+}
+
+// IsInCheck returns whether the given color's king is in check.
+func IsInCheck(board Board, color ActiveColor) (bool, error) {
+	kingPosition, err := FindKing(board, color)
+	if err != nil {
+		return false, err
+	}
+
+	return IsSquareAttacked(board, kingPosition, color), nil
+}
+
 // Checks if a square is attacked by the opposite color to defenderSide
-func IsSquareAttacked(board Board, position Position, defenderSide Turn) bool {
+func IsSquareAttacked(board Board, position Position, defenderSide ActiveColor) bool {
 
 	// Check for attacks by pawn
 	var pawnDirection int8
@@ -330,8 +364,8 @@ func IsSquareAttacked(board Board, position Position, defenderSide Turn) bool {
 	}
 
 	pawnPositions := [2]Position{
-		position.AddOffset(Position{pawnDirection, 1}),
-		position.AddOffset(Position{pawnDirection, -1}),
+		AddPositions(position, Position{pawnDirection, 1}),
+		AddPositions(position, Position{pawnDirection, -1}),
 	}
 
 	for _, pawnPosition := range pawnPositions {
@@ -356,7 +390,7 @@ func IsSquareAttacked(board Board, position Position, defenderSide Turn) bool {
 	bishopVisions := getDirectionalVision(board, position, bishopDirections)
 	for _, bishopVision := range bishopVisions {
 		// Don't consider the square itself
-		if !bishopVision.Valid {
+		if !bishopVision.Ok {
 			continue
 		}
 		seenPiece := board.GetSquare(bishopVision.Position)
@@ -371,7 +405,7 @@ func IsSquareAttacked(board Board, position Position, defenderSide Turn) bool {
 	rookVisions := getDirectionalVision(board, position, rookDirections)
 	for _, rookVision := range rookVisions {
 		// Don't consider the square itself
-		if !rookVision.Valid {
+		if !rookVision.Ok {
 			continue
 		}
 		seenPiece := board.GetSquare(rookVision.Position)
@@ -385,7 +419,7 @@ func IsSquareAttacked(board Board, position Position, defenderSide Turn) bool {
 	// Check for attacks by king
 	var square Piece
 	for _, offset := range rookDirections {
-		singleRookMove := position.AddOffset(offset)
+		singleRookMove := AddPositions(position, offset)
 		if !isInBounds(singleRookMove) {
 			continue
 		}
@@ -398,7 +432,7 @@ func IsSquareAttacked(board Board, position Position, defenderSide Turn) bool {
 	}
 
 	for _, offset := range bishopDirections {
-		singleBishopMove := position.AddOffset(offset)
+		singleBishopMove := AddPositions(position, offset)
 		if !isInBounds(singleBishopMove) {
 			continue
 		}
@@ -431,7 +465,7 @@ func generateDirectionalMoves(state State, position, kingPosition Position, dire
 	for i := 0; i < 4; i++ {
 		offset = 1
 		for {
-			nextPosition := position.AddOffset(directions[i].MultiplyScalar(offset))
+			nextPosition := AddPositions(position, MultiplyScalar(directions[i], offset))
 
 			if !isInBounds(nextPosition) {
 				break
@@ -445,7 +479,7 @@ func generateDirectionalMoves(state State, position, kingPosition Position, dire
 			}
 
 			// If the square is empty or an unfriendly piece and executing the move does not result in a check, add it to the list
-			isFriendlyPiece := (state.Turn == BlackTurn && nextSquare > 0) || (state.Turn == WhiteTurn && nextSquare < 0)
+			isFriendlyPiece := (state.ActiveColor == BlackTurn && nextSquare > 0) || (state.ActiveColor == WhiteTurn && nextSquare < 0)
 			if !isFriendlyPiece && !checkIllegalMove(possibleMove) {
 				moves = append(moves, possibleMove)
 			}
@@ -462,8 +496,8 @@ func generateDirectionalMoves(state State, position, kingPosition Position, dire
 }
 
 // The last square in a set of directions
-func getDirectionalVision(board Board, position Position, directions [4]Position) [4]NullablePosition {
-	positions := [4]NullablePosition{}
+func getDirectionalVision(board Board, position Position, directions [4]Position) [4]PositionOpt {
+	optPositions := [4]PositionOpt{}
 
 	var endFound bool
 	var offset int8
@@ -471,30 +505,30 @@ func getDirectionalVision(board Board, position Position, directions [4]Position
 		endFound = false
 		offset = 1
 		for !endFound {
-			nextPosition := position.AddOffset(directions[i].MultiplyScalar(offset))
+			nextPosition := AddPositions(position, MultiplyScalar(directions[i], offset))
 			if !isInBounds(nextPosition) {
 				endFound = true
-				positions[i] = NullablePosition{
-					Valid: false,
+				optPositions[i] = PositionOpt{
+					Ok: false,
 				}
 			} else if nextSquare := board.GetSquare(nextPosition); nextSquare != EmptySquare {
 				endFound = true
-				positions[i] = NullablePosition{
+				optPositions[i] = PositionOpt{
 					Position: nextPosition,
-					Valid:    true,
+					Ok:       true,
 				}
 			}
 			offset++
 		}
 	}
 
-	return positions
+	return optPositions
 }
 
 func getKnightVision(position Position) []Position {
 	validPositions := []Position{}
 	for _, offset := range knightOffsets {
-		possiblePosition := position.AddOffset(offset)
+		possiblePosition := AddPositions(position, offset)
 		if isInBounds(possiblePosition) {
 			validPositions = append(validPositions, possiblePosition)
 		}
@@ -505,7 +539,7 @@ func getKnightVision(position Position) []Position {
 
 func getIllegalMoveChecker(state State, kingPosition Position) func(move Move) bool {
 	return func(move Move) bool {
-		return IsSquareAttacked(state.Board.ExecuteMove(move), kingPosition, state.Turn)
+		return IsSquareAttacked(state.Board.DoMove(move), kingPosition, state.ActiveColor)
 	}
 }
 

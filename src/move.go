@@ -1,9 +1,6 @@
 package chess
 
-/*
-Move types
-*/
-
+// MoveFlag is a flag added to a move which handles special cases like castling and promotion.
 type MoveFlag uint8
 
 const (
@@ -17,8 +14,8 @@ const (
 	PromoteToKnight
 )
 
-const threeBitMask uint8 = 0b00000111
-const fourBitMask uint8 = 0b00001111
+const bitMask3 uint8 = 0b00000111
+const bitMask4 uint8 = 0b00001111
 
 /*
 3 bits for X1
@@ -40,24 +37,22 @@ type MoveWithInfo struct {
 	Captured Piece
 }
 
-/*
-Functions to translate between move types
-*/
-
+// ToEncoded translates a Move struct to a more compressed encoding.
 func (move Move) ToEncoded() (encoded EncodedMove) {
 	encoded = 0
-	encoded |= EncodedMove((threeBitMask & uint8(move.Start.X)))
-	encoded |= EncodedMove((threeBitMask & uint8(move.Start.Y))) << 3
-	encoded |= EncodedMove((threeBitMask & uint8(move.End.X))) << 6
-	encoded |= EncodedMove((threeBitMask & uint8(move.End.Y))) << 9
-	encoded |= EncodedMove((fourBitMask & uint8(move.Flag))) << 12
+	encoded |= EncodedMove((bitMask3 & uint8(move.Start.X)))
+	encoded |= EncodedMove((bitMask3 & uint8(move.Start.Y))) << 3
+	encoded |= EncodedMove((bitMask3 & uint8(move.End.X))) << 6
+	encoded |= EncodedMove((bitMask3 & uint8(move.End.Y))) << 9
+	encoded |= EncodedMove((bitMask4 & uint8(move.Flag))) << 12
 	return
 }
 
-func (encoded EncodedMove) ToMove() Move {
+// ToMove translates from a compressed encoding to a Move struct.
+func (enc EncodedMove) ToMove() Move {
 	return Move{
-		Start: Position{X: int8(encoded & EncodedMove(threeBitMask)), Y: int8(encoded & (EncodedMove(threeBitMask) << 3) >> 3)},
-		End:   Position{X: int8(encoded & (EncodedMove(threeBitMask) << 6) >> 6), Y: int8(encoded & (EncodedMove(threeBitMask) << 9) >> 9)},
-		Flag:  MoveFlag(encoded & (EncodedMove(threeBitMask) << 12) >> 12),
+		Start: Position{X: int8(enc & EncodedMove(bitMask3)), Y: int8(enc & (EncodedMove(bitMask3) << 3) >> 3)},
+		End:   Position{X: int8(enc & (EncodedMove(bitMask3) << 6) >> 6), Y: int8(enc & (EncodedMove(bitMask3) << 9) >> 9)},
+		Flag:  MoveFlag(enc & (EncodedMove(bitMask3) << 12) >> 12),
 	}
 }

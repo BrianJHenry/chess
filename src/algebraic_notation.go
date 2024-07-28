@@ -6,6 +6,7 @@ import (
 	"strconv"
 )
 
+// AlgebraicNotation represents the standard written notation for a chess move.
 type AlgebraicNotation string
 
 // ToAlgebraicNotation converts from a move struct to standard algebraic notation.
@@ -18,15 +19,15 @@ func (move Move) ToAlgebraicNotation(state State) (AlgebraicNotation, error) {
 		baseString = "O-O-O"
 	default:
 		var err error
-		baseString, err = move.getMoveAlgebraicNotation(state.Board)
+		baseString, err = move.getAlgebraicNotationCore(state.Board)
 		if err != nil {
 			return "", err
 		}
 	}
 
 	// Check and mate
-	updatedState := state.ExecuteMove(move)
-	isInCheck, err := updatedState.Board.IsInCheck(updatedState.Turn)
+	updatedState := state.DoMove(move)
+	isInCheck, err := IsInCheck(updatedState.Board, updatedState.ActiveColor)
 	if err != nil {
 		return AlgebraicNotation(baseString), err
 	}
@@ -51,7 +52,7 @@ func (algebraicNotation AlgebraicNotation) ToMove(state State) (Move, error) {
 	// Castling
 	if algebraicNotation == "O-O" || algebraicNotation == "O-O+" || algebraicNotation == "O-O#" {
 		var rank int8
-		if state.Turn == BlackTurn {
+		if state.ActiveColor == BlackTurn {
 			rank = 0
 		} else {
 			rank = 7
@@ -63,7 +64,7 @@ func (algebraicNotation AlgebraicNotation) ToMove(state State) (Move, error) {
 		}, nil
 	} else if algebraicNotation == "O-O-O" || algebraicNotation == "O-O-O+" || algebraicNotation == "O-O-O#" {
 		var rank int8
-		if state.Turn == BlackTurn {
+		if state.ActiveColor == BlackTurn {
 			rank = 0
 		} else {
 			rank = 7
@@ -96,7 +97,7 @@ func (algebraicNotation AlgebraicNotation) ToMove(state State) (Move, error) {
 		length -= 2
 	}
 
-	endPosition, err := ConvertStringToPosition(string(algebraicNotation)[length-2 : length-1])
+	endPosition, err := stringToPosition(string(algebraicNotation)[length-2 : length-1])
 	if err != nil {
 		return Move{}, err
 	}
@@ -121,14 +122,18 @@ func (algebraicNotation AlgebraicNotation) ToMove(state State) (Move, error) {
 				return Move{}, err
 			}
 		} else {
-			start, err = findStartPosition(algebraicNotation[0], state, endPosition, -1, ConvertRuneToFile(rune(algebraicNotation[1])))
+			file, err := runeToFile(rune(algebraicNotation[1]))
+			if err != nil {
+				return Move{}, err
+			}
+			start, err = findStartPosition(algebraicNotation[0], state, endPosition, -1, file)
 			if err != nil {
 				return Move{}, err
 			}
 		}
 	} else {
 		// Case where the disambiguating gives the full position
-		start, err = ConvertStringToPosition(string(algebraicNotation)[1:2])
+		start, err = stringToPosition(string(algebraicNotation)[1:2])
 		if err != nil {
 			return Move{}, err
 		}
@@ -147,20 +152,25 @@ func (algebraicNotation AlgebraicNotation) ToMove(state State) (Move, error) {
 	}, nil
 }
 
-func (move Move) getMoveAlgebraicNotation(board Board) (string, error) {
+// getAlgebraicNotationCore generates the core notation for non-castling moves.
+func (move Move) getAlgebraicNotationCore(board Board) (string, error) {
 	piece := board.GetSquare(move.Start)
 
 	switch piece {
 	case WhitePawn, BlackPawn:
 		// Base movement
-		base, err := ConvertPositionToString(move.End)
+		base, err := positionToString(move.End)
 		if err != nil {
 			return "", err
 		}
 
 		// Capture
 		if move.Start.Y != move.End.Y {
-			base = ConvertFileToString(move.Start.Y) + "x" + base
+			file, err := fileToString(move.Start.Y)
+			if err != nil {
+				return "", err
+			}
+			base = file + "x" + base
 		}
 
 		// Promotion
@@ -181,7 +191,7 @@ func (move Move) getMoveAlgebraicNotation(board Board) (string, error) {
 
 		// Disambiguate and get core
 		visiblePositions := getDirectionalVision(board, move.End, rookDirections)
-		core, err := getCoreAlgebraicNotation(board, piece, move, visiblePositions[:])
+		core, err := getPositionalAlgebraicNotation(board, piece, move, visiblePositions[:])
 		if err != nil {
 			return "", err
 		}
@@ -193,7 +203,7 @@ func (move Move) getMoveAlgebraicNotation(board Board) (string, error) {
 
 		// Disambiguate and get core
 		visiblePositions := getKnightVision(move.End)
-		core, err := getCoreAlgebraicNotation(board, piece, move, ConvertToNullablePositions(visiblePositions))
+		core, err := getPositionalAlgebraicNotation(board, piece, move, PositionsToOptionalPositions(visiblePositions))
 		if err != nil {
 			return "", err
 		}
@@ -205,7 +215,7 @@ func (move Move) getMoveAlgebraicNotation(board Board) (string, error) {
 
 		// Disambiguate and get core
 		visiblePositions := getDirectionalVision(board, move.End, bishopDirections)
-		core, err := getCoreAlgebraicNotation(board, piece, move, visiblePositions[:])
+		core, err := getPositionalAlgebraicNotation(board, piece, move, visiblePositions[:])
 		if err != nil {
 			return "", err
 		}
@@ -220,7 +230,7 @@ func (move Move) getMoveAlgebraicNotation(board Board) (string, error) {
 		rookVisions := getDirectionalVision(board, move.End, rookDirections)
 		visiblePositions := bishopVisions[:]
 		visiblePositions = append(visiblePositions, rookVisions[:]...)
-		core, err := getCoreAlgebraicNotation(board, piece, move, visiblePositions)
+		core, err := getPositionalAlgebraicNotation(board, piece, move, visiblePositions)
 		if err != nil {
 			return "", err
 		}
@@ -236,7 +246,7 @@ func (move Move) getMoveAlgebraicNotation(board Board) (string, error) {
 		}
 
 		// End position
-		endPosition, err := ConvertPositionToString(move.End)
+		endPosition, err := positionToString(move.End)
 		if err != nil {
 			return "", err
 		}
@@ -248,7 +258,8 @@ func (move Move) getMoveAlgebraicNotation(board Board) (string, error) {
 	return "", nil
 }
 
-func getCoreAlgebraicNotation(board Board, piece Piece, move Move, visiblePositions []NullablePosition) (string, error) {
+// getPositionalAlgebraicNotation generates the positional element of algebraic notation: i.e. xa2 or b3xc4.
+func getPositionalAlgebraicNotation(board Board, piece Piece, move Move, visiblePositions []PositionOpt) (string, error) {
 	base := ""
 
 	// Disambiguate
@@ -257,7 +268,7 @@ func getCoreAlgebraicNotation(board Board, piece Piece, move Move, visiblePositi
 	anyAmbiguities := false
 	for _, visiblePosition := range visiblePositions {
 		// Check for rooks that could make the same move
-		if visiblePosition.Valid && visiblePosition.Position != move.Start && board.GetSquare(visiblePosition.Position) == piece {
+		if visiblePosition.Ok && visiblePosition.Position != move.Start && board.GetSquare(visiblePosition.Position) == piece {
 			if visiblePosition.Position.X == move.Start.X {
 				sameRank = true
 			} else if visiblePosition.Position.Y == move.Start.Y {
@@ -267,15 +278,23 @@ func getCoreAlgebraicNotation(board Board, piece Piece, move Move, visiblePositi
 		}
 	}
 	if sameFile && sameRank {
-		startPosition, err := ConvertPositionToString(move.Start)
+		startPosition, err := positionToString(move.Start)
 		if err != nil {
 			return "", err
 		}
 		return startPosition, nil
 	} else if sameFile {
-		base += ConvertRankToString(move.Start.X)
+		rank, err := rankToString(move.Start.X)
+		if err != nil {
+			return "", err
+		}
+		base += rank
 	} else if anyAmbiguities {
-		base += ConvertFileToString(move.Start.Y)
+		file, err := fileToString(move.Start.Y)
+		if err != nil {
+			return "", err
+		}
+		base += file
 	}
 
 	// Captures
@@ -284,7 +303,7 @@ func getCoreAlgebraicNotation(board Board, piece Piece, move Move, visiblePositi
 	}
 
 	// End position
-	endPosition, err := ConvertPositionToString(move.End)
+	endPosition, err := positionToString(move.End)
 	if err != nil {
 		return "", err
 	}
@@ -292,8 +311,10 @@ func getCoreAlgebraicNotation(board Board, piece Piece, move Move, visiblePositi
 
 	return base, nil
 }
+
+// findStartPosition parses move.Start from a move in algebraic notation.
 func findStartPosition(charPiece byte, state State, end Position, hintX, hintY int8) (Position, error) {
-	piece := getPiece(charPiece, state.Turn)
+	piece := getPiece(charPiece, state.ActiveColor)
 	switch piece {
 	case WhitePawn, BlackPawn:
 		var searchDirection int8
@@ -324,7 +345,7 @@ func findStartPosition(charPiece byte, state State, end Position, hintX, hintY i
 		return start, nil
 	case WhiteKnight, BlackKnight:
 		knighVisions := getKnightVision(end)
-		start, err := findStartPositionForVisions(piece, state.Board, hintX, hintY, ConvertToNullablePositions(knighVisions))
+		start, err := findStartPositionForVisions(piece, state.Board, hintX, hintY, PositionsToOptionalPositions(knighVisions))
 		if err != nil {
 			return Position{}, err
 		}
@@ -347,7 +368,7 @@ func findStartPosition(charPiece byte, state State, end Position, hintX, hintY i
 		}
 		return start, nil
 	case WhiteKing, BlackKing:
-		start, err := state.Board.FindKing(state.Turn)
+		start, err := FindKing(state.Board, state.ActiveColor)
 		if err != nil {
 			return Position{}, err
 		}
@@ -356,10 +377,11 @@ func findStartPosition(charPiece byte, state State, end Position, hintX, hintY i
 	return Position{}, fmt.Errorf("invalid piece: %c", rune(charPiece))
 }
 
-func findStartPositionForVisions(piece Piece, board Board, hintX, hintY int8, visions []NullablePosition) (Position, error) {
+// findStartPositionForVisions retrieves move.Start based on the possible moves of the moved piece type.
+func findStartPositionForVisions(piece Piece, board Board, hintX, hintY int8, visions []PositionOpt) (Position, error) {
 	for _, vision := range visions {
 		// Skip out of bounds
-		if !vision.Valid {
+		if !vision.Ok {
 			continue
 		}
 
@@ -380,7 +402,8 @@ func findStartPositionForVisions(piece Piece, board Board, hintX, hintY int8, vi
 	return Position{}, errors.New("given the constraints, the starting position could not be found")
 }
 
-func getPiece(piece byte, turn Turn) Piece {
+// getPiece retrieves the Piece type based on the turn and first character in the algebraic notation version of the move.
+func getPiece(piece byte, turn ActiveColor) Piece {
 	switch piece {
 	case 'K':
 		if turn == BlackTurn {
@@ -419,4 +442,64 @@ func getPiece(piece byte, turn Turn) Piece {
 			return WhitePawn
 		}
 	}
+}
+
+// stringToPosition takes in a 2 character letter number combo to specify the file and rank of a position. Ex. A1 -> 7, 0; C4 => 4, 2.
+func stringToPosition(pos string) (Position, error) {
+	if len(pos) != 2 {
+		return Position{}, errors.New("position codes should be of length 2")
+	}
+
+	rankChar := pos[1]
+	rank := 7 - (rankChar - '1')
+
+	fileChar := pos[0]
+	file := fileChar - 'a'
+	position := Position{
+		int8(rank),
+		int8(file),
+	}
+
+	if isInBounds(position) {
+		return position, nil
+	} else {
+		return position, fmt.Errorf("invalid position: %d, %d", position.X, position.Y)
+	}
+}
+
+// positionToString takes in a position and returns the 2 character letter number combo that specifies the file and rank of the position.
+func positionToString(position Position) (string, error) {
+	if !isInBounds(position) {
+		return "", fmt.Errorf("position out of bounds: %d, %d", position.X, position.Y)
+	}
+
+	rankChar := (7 - position.X) + '1'
+	fileChar := position.Y + 'a'
+
+	return fmt.Sprintf("%c%c", fileChar, rankChar), nil
+}
+
+// runeToFile takes in a rune from a-h and returns the index of the file.
+func runeToFile(f rune) (int8, error) {
+	file := int8(f - 'a')
+	if file < 0 || file > 7 {
+		return file, fmt.Errorf("file %c is out of range", f)
+	}
+	return file, nil
+}
+
+// fileToString takes in the index of a file and returns the character from a-h that represents the file.
+func fileToString(f int8) (string, error) {
+	if f < 0 || f > 7 {
+		return "", fmt.Errorf("file %d is out of range", f)
+	}
+	return string(rune(f + 'a')), nil
+}
+
+// rankToString takes in the index of the rank and returns the character from 1-8 that represents the rank.
+func rankToString(r int8) (string, error) {
+	if r < 0 || r > 7 {
+		return "", fmt.Errorf("rank %d is out of range", r)
+	}
+	return fmt.Sprint(7 - r + 1), nil
 }

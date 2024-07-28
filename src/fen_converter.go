@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func ConvertFenToState(fenString string) (State, error) {
+func fenToState(fenString string) (State, error) {
 	// Read and validate tokens
 	tokens := strings.Split(fenString, " ")
 	if len(tokens) != 6 {
@@ -53,18 +53,17 @@ func ConvertFenToState(fenString string) (State, error) {
 
 	// Convert board
 	board := Board{}
-	// TODO: possibly look at what the most efficient way to store rank/files is
 	for rankIndex, rank := range boardRanks {
 		fileIndex := 0
 		for _, char := range rank {
 			// Handle number of empty squares
-			if number, err := strconv.Atoi(string(char)); err == nil {
-				for counter := 0; counter < number; counter++ {
+			if n, err := strconv.Atoi(string(char)); err == nil {
+				for c := 0; c < n; c++ {
 					board[rankIndex][fileIndex] = EmptySquare
 					fileIndex++
 				}
 			} else {
-				piece, err := convertFenPieceToPiece(char)
+				piece, err := fenPieceToPiece(char)
 				if err != nil {
 					return State{}, err
 				}
@@ -75,13 +74,15 @@ func ConvertFenToState(fenString string) (State, error) {
 		}
 	}
 
-	var turn Turn
+	// Active color
+	var activeColor ActiveColor
 	if color == "w" {
-		turn = WhiteTurn
+		activeColor = WhiteTurn
 	} else if color == "b" {
-		turn = BlackTurn
+		activeColor = BlackTurn
 	}
 
+	// Castling rights
 	whiteCanCastleQueenSide := false
 	whiteCanCastleKingSide := false
 	blackCanCastleQueenSide := false
@@ -99,19 +100,18 @@ func ConvertFenToState(fenString string) (State, error) {
 		}
 	}
 
-	var enPassantSquare NullablePosition
+	// En passant
+	var enPassantSquare PositionOpt
 	if enPassant == "-" {
-		enPassantSquare = NullablePosition{
-			Valid: false,
-		}
+		enPassantSquare = PositionOpt{Ok: false}
 	} else {
-		pos, err := ConvertStringToPosition(enPassant)
+		pos, err := stringToPosition(enPassant)
 		if err != nil {
 			return State{}, err
 		}
 
-		enPassantSquare = NullablePosition{
-			Valid:    true,
+		enPassantSquare = PositionOpt{
+			Ok:       true,
 			Position: pos,
 		}
 	}
@@ -122,12 +122,12 @@ func ConvertFenToState(fenString string) (State, error) {
 		whiteCanCastleQueenSide,
 		blackCanCastleKingSide,
 		blackCanCastleQueenSide,
-		turn,
+		activeColor,
 		enPassantSquare,
 	}, nil
 }
 
-func convertFenPieceToPiece(p rune) (Piece, error) {
+func fenPieceToPiece(p rune) (Piece, error) {
 	switch p {
 	case 'r':
 		return BlackRook, nil

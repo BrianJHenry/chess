@@ -10,7 +10,7 @@ type StateAndPreviousMove struct {
 }
 
 func TestMoveGenerationAndExecution(t *testing.T) {
-	data, err := LoadTestData()
+	data, err := loadTestData()
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -40,9 +40,9 @@ func TestMoveGenerationAndExecution(t *testing.T) {
 				t.Errorf("move not generated %s", result.Move)
 			}
 
-			generatedState := test.Initial.ExecuteMove(move)
+			generatedState := test.Initial.DoMove(move)
 			if generatedState != result.Result {
-				t.Errorf("incorrect resultant state for move %s\nexpected=\n%s\nactual=\n%s", result.Move, result.Result.Board.GetPrintableBoard(), generatedState.Board.GetPrintableBoard())
+				t.Errorf("incorrect resultant state for move %s\nexpected=\n%s\nactual=\n%s", result.Move, BoardToDisplayString(result.Result.Board), BoardToDisplayString(generatedState.Board))
 			}
 		}
 	}
