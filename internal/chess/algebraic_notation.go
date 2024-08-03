@@ -114,6 +114,7 @@ func (algebraicNotation AlgebraicNotation) ToMove(state State) (Move, error) {
 			start,
 			endPosition,
 			None,
+			EmptySquare,
 		}, nil
 	}
 

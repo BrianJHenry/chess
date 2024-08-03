@@ -29,12 +29,7 @@ type EncodedMove int16
 type Move struct {
 	Start, End Position
 	Flag       MoveFlag
-}
-
-type MoveWithInfo struct {
-	Move     Move
-	Moved    Piece
-	Captured Piece
+	Captured   Piece
 }
 
 // ToEncoded translates a Move struct to a more compressed encoding.

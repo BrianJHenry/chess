@@ -89,3 +89,11 @@ func getKnightColorForPawn(pawn Piece) Piece {
 		return WhiteKnight
 	}
 }
+
+func getEnemyPawnColor(color Color) Piece {
+	if color == Black {
+		return WhitePawn
+	} else {
+		return BlackPawn
+	}
+}

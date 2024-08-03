@@ -83,6 +83,7 @@ func GenerateKingMoves(state State, position Position) (moves []Move) {
 				position,
 				pos,
 				None,
+				state.Board[pos.X][pos.Y],
 			}
 
 			// Check that this move does not lead to the king being put into check
@@ -109,6 +110,7 @@ func GenerateKingMoves(state State, position Position) (moves []Move) {
 				position,
 				kingSidePositionFinish,
 				KingSideCastle,
+				EmptySquare,
 			})
 		}
 
@@ -128,6 +130,7 @@ func GenerateKingMoves(state State, position Position) (moves []Move) {
 				position,
 				queenSidePositionFinish,
 				QueenSideCastle,
+				EmptySquare,
 			})
 		}
 	} else if state.ActiveColor == White && !IsSquareAttacked(state.Board, position, White) {
@@ -146,6 +149,7 @@ func GenerateKingMoves(state State, position Position) (moves []Move) {
 				position,
 				kingSidePositionFinish,
 				KingSideCastle,
+				EmptySquare,
 			})
 		}
 
@@ -165,6 +169,7 @@ func GenerateKingMoves(state State, position Position) (moves []Move) {
 				position,
 				queenSidePositionFinish,
 				QueenSideCastle,
+				EmptySquare,
 			})
 		}
 	}
@@ -196,6 +201,7 @@ func GenerateKnightMoves(state State, position, kingPosition Position) (moves []
 				position,
 				knightPosition,
 				None,
+				state.Board.GetSquare((knightPosition)),
 			}
 			if !checkIllegalMove(move) {
 				moves = append(moves, move)
@@ -244,6 +250,7 @@ func GeneratePawnMoves(state State, position, kingPosition Position) (moves []Mo
 			position,
 			pushPosition,
 			None,
+			EmptySquare,
 		}
 
 		if !checkIllegalMove(move) {
@@ -262,6 +269,7 @@ func GeneratePawnMoves(state State, position, kingPosition Position) (moves []Mo
 					position,
 					doublePushPosition,
 					None,
+					EmptySquare,
 				}
 
 				if !checkIllegalMove(move) {
@@ -282,6 +290,7 @@ func GeneratePawnMoves(state State, position, kingPosition Position) (moves []Mo
 				position,
 				capturePosition,
 				None,
+				state.Board.GetSquare(capturePosition),
 			}
 
 			if !checkIllegalMove(move) {
@@ -296,6 +305,7 @@ func GeneratePawnMoves(state State, position, kingPosition Position) (moves []Mo
 				position,
 				capturePosition,
 				EnPassant,
+				getEnemyPawnColor(state.ActiveColor),
 			}
 
 			if !checkIllegalMove(move) {
@@ -419,6 +429,7 @@ func generateDirectionalMoves(state State, position, kingPosition Position, dire
 				position,
 				nextPosition,
 				None,
+				state.Board.GetSquare(nextPosition),
 			}
 
 			// If the square is empty or an unfriendly piece and executing the move does not result in a check, add it to the list
@@ -535,21 +546,25 @@ func getMovesForPromotion(move Move) []Move {
 		move.Start,
 		move.End,
 		PromoteToQueen,
+		move.Captured,
 	}
 	moves[1] = Move{
 		move.Start,
 		move.End,
 		PromoteToRook,
+		move.Captured,
 	}
 	moves[2] = Move{
 		move.Start,
 		move.End,
 		PromoteToBishop,
+		move.Captured,
 	}
 	moves[3] = Move{
 		move.Start,
 		move.End,
 		PromoteToKnight,
+		move.Captured,
 	}
 
 	return moves
