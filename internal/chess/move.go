@@ -56,3 +56,7 @@ func (enc EncodedMove) ToMove() Move {
 		Flag:  MoveFlag(enc & (EncodedMove(bitMask3) << 12) >> 12),
 	}
 }
+
+func MoveTouchesSquare(move Move, position Position) bool {
+	return move.Start == position || move.End == position
+}

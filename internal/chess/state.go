@@ -36,24 +36,26 @@ func (state State) DoMove(move Move) State {
 	blackCanCastleKingSide := state.BlackCanCastleKingSide
 	blackCanCastleQueenSide := state.BlackCanCastleQueenSide
 
-	if state.ActiveColor == Black {
-		if (move.Start == Position{0, 4}) {
-			blackCanCastleKingSide = false
-			blackCanCastleQueenSide = false
-		} else if (move.Start == Position{0, 0}) {
-			blackCanCastleQueenSide = false
-		} else if (move.Start == Position{0, 7}) {
-			blackCanCastleKingSide = false
-		}
-	} else {
-		if (move.Start == Position{7, 4}) {
-			whiteCanCastleKingSide = false
-			whiteCanCastleQueenSide = false
-		} else if (move.Start == Position{7, 0}) {
-			whiteCanCastleQueenSide = false
-		} else if (move.Start == Position{7, 7}) {
-			whiteCanCastleKingSide = false
-		}
+	if state.ActiveColor == Black && (move.Start == Position{0, 4}) {
+		blackCanCastleKingSide = false
+		blackCanCastleQueenSide = false
+	} else if state.ActiveColor == White && (move.Start == Position{7, 4}) {
+		whiteCanCastleKingSide = false
+		whiteCanCastleQueenSide = false
+	}
+
+	// Check for rooks moving or being captured
+	if MoveTouchesSquare(move, Position{0, 0}) {
+		blackCanCastleQueenSide = false
+	}
+	if MoveTouchesSquare(move, Position{0, 7}) {
+		blackCanCastleKingSide = false
+	}
+	if MoveTouchesSquare(move, Position{7, 0}) {
+		whiteCanCastleQueenSide = false
+	}
+	if MoveTouchesSquare(move, Position{7, 7}) {
+		whiteCanCastleKingSide = false
 	}
 
 	enPassantSquare := PositionOpt{
