@@ -118,10 +118,12 @@ func fenToState(fenString string) (State, error) {
 
 	return State{
 		board,
-		whiteCanCastleKingSide,
-		whiteCanCastleQueenSide,
-		blackCanCastleKingSide,
-		blackCanCastleQueenSide,
+		CastlingRights{
+			whiteCanCastleKingSide,
+			whiteCanCastleQueenSide,
+			blackCanCastleKingSide,
+			blackCanCastleQueenSide,
+		},
 		activeColor,
 		enPassantSquare,
 	}, nil

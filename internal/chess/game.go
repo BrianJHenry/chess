@@ -11,7 +11,7 @@ type Game struct {
 func InitialiseGame() Game {
 	initialState := InitialiseState()
 
-	possibleMoves, err := GenerateAllMoves(initialState)
+	possibleMoves, err := initialState.GenerateAllMoves()
 	if err != nil {
 		panic("call to GenerateAllMoves should never fail in the opening position.")
 	}
@@ -26,21 +26,21 @@ func InitialiseGame() Game {
 }
 
 // DoMove takes in a Game object and a Move and executes the move, returning the updated Game object.
-func (game Game) DoMove(move Move) (Game, error) {
-	state := game.State.DoMove(move)
-	moves := append(game.Moves, move)
+func (game *Game) DoMove(move Move) error {
+	game.State.DoMove(move)
+	game.Moves = append(game.Moves, move)
 
-	possibleMoves, err := GenerateAllMoves(state)
+	possibleMoves, err := game.State.GenerateAllMoves()
 	if err != nil {
-		return Game{}, err
+		return err
 	}
 
 	checkmate := false
 	stalemate := false
 	if len(possibleMoves) == 0 {
-		isInCheck, err := isInCheck(state.Board, state.ActiveColor)
+		isInCheck, err := game.State.Board.isInCheck(game.State.ActiveColor)
 		if err != nil {
-			return Game{}, err
+			return err
 		}
 
 		if isInCheck {
@@ -50,11 +50,7 @@ func (game Game) DoMove(move Move) (Game, error) {
 		}
 	}
 
-	return Game{
-		state,
-		moves,
-		checkmate,
-		stalemate,
-		possibleMoves,
-	}, nil
+	game.Checkmate = checkmate
+	game.Stalemate = stalemate
+	return nil
 }

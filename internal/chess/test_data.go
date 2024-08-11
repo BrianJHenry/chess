@@ -43,7 +43,7 @@ type fenExpectedState struct {
 
 func loadTestData() ([]moveGenerationTestData, error) {
 	moveGenerationTestData := []moveGenerationTestData{}
-	err := filepath.WalkDir("../test_data", func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir("../../test_data", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}

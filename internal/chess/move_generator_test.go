@@ -16,7 +16,7 @@ func TestMoveGenerationAndExecution(t *testing.T) {
 	}
 
 	for _, test := range data {
-		moves, err := GenerateAllMoves(test.Initial)
+		moves, err := test.Initial.GenerateAllMoves()
 		if err != nil {
 			t.Error(err.Error())
 			continue
@@ -44,10 +44,14 @@ func TestMoveGenerationAndExecution(t *testing.T) {
 				t.Errorf("move not generated %s", result.Move)
 			}
 
-			generatedState := test.Initial.DoMove(move)
-			if generatedState != result.Result {
-				t.Errorf("incorrect resultant state for move %s\nexpected=\n%s\nactual=\n%s", result.Move, BoardToDisplayString(result.Result.Board), BoardToDisplayString(generatedState.Board))
+			castlingRights := test.Initial.CastlingRights
+			enPassantSquare := test.Initial.EnPassantPosition
+
+			test.Initial.DoMove(move)
+			if test.Initial != result.Result {
+				t.Errorf("incorrect resultant state for move %s\nexpected=\n%s\nactual=\n%s", result.Move, BoardToDisplayString(result.Result.Board), BoardToDisplayString(test.Initial.Board))
 			}
+			test.Initial.UndoMove(move, castlingRights, enPassantSquare)
 		}
 	}
 }
@@ -117,14 +121,21 @@ func getMoveCount(state State, depth int) (int, error) {
 	}
 	depth--
 
-	possibleMoves, err := GenerateAllMoves(state)
+	possibleMoves, err := state.GenerateAllMoves()
 	if err != nil {
 		return 0, err
 	}
 
 	var total int = 0
 	for _, newMove := range possibleMoves {
-		moveCount, err := getMoveCount(state.DoMove(newMove), depth)
+		// Save previous state information which is not contained within a move
+		castlingRights := state.CastlingRights
+		enPassantSquare := state.EnPassantPosition
+
+		state.DoMove(newMove)
+		moveCount, err := getMoveCount(state, depth)
+		state.UndoMove(newMove, castlingRights, enPassantSquare)
+
 		if err != nil {
 			return 0, err
 		}
@@ -146,8 +157,12 @@ func getPosition5() State {
 			{WhitePawn, WhitePawn, WhitePawn, EmptySquare, WhiteKnight, BlackKnight, WhitePawn, WhitePawn},
 			{WhiteRook, WhiteKnight, WhiteBishop, WhiteQueen, WhiteKing, EmptySquare, EmptySquare, WhiteRook},
 		},
-		true, true,
-		false, false,
+		CastlingRights{
+			true,
+			true,
+			false,
+			false,
+		},
 		White,
 		PositionOpt{Ok: false},
 	}

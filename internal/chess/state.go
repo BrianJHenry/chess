@@ -8,33 +8,40 @@ const (
 )
 
 type State struct {
-	Board                   Board
+	Board             Board
+	CastlingRights    CastlingRights
+	ActiveColor       Color
+	EnPassantPosition PositionOpt
+}
+
+type CastlingRights struct {
 	WhiteCanCastleKingSide  bool
 	WhiteCanCastleQueenSide bool
 	BlackCanCastleKingSide  bool
 	BlackCanCastleQueenSide bool
-	ActiveColor             Color
-	EnPassantPosition       PositionOpt
 }
 
 func InitialiseState() State {
 	return State{
 		InitialiseBoard(),
-		true,
-		true,
-		true,
-		true,
+		CastlingRights{
+			true,
+			true,
+			true,
+			true,
+		},
 		White,
 		PositionOpt{Ok: false},
 	}
 }
 
 // DoMove takes in a state and a move and executes the move, returning the updated state.
-func (state State) DoMove(move Move) State {
-	whiteCanCastleKingSide := state.WhiteCanCastleKingSide
-	whiteCanCastleQueenSide := state.WhiteCanCastleQueenSide
-	blackCanCastleKingSide := state.BlackCanCastleKingSide
-	blackCanCastleQueenSide := state.BlackCanCastleQueenSide
+func (state *State) DoMove(move Move) {
+	castlingRights := state.CastlingRights
+	whiteCanCastleKingSide := castlingRights.WhiteCanCastleKingSide
+	whiteCanCastleQueenSide := castlingRights.WhiteCanCastleQueenSide
+	blackCanCastleKingSide := castlingRights.BlackCanCastleKingSide
+	blackCanCastleQueenSide := castlingRights.BlackCanCastleQueenSide
 
 	if state.ActiveColor == Black && (move.Start == Position{0, 4}) {
 		blackCanCastleKingSide = false
@@ -71,25 +78,20 @@ func (state State) DoMove(move Move) State {
 		}
 	}
 
-	return State{
-		state.Board.DoMove(move),
+	state.Board.DoMove(move)
+	state.CastlingRights = CastlingRights{
 		whiteCanCastleKingSide,
 		whiteCanCastleQueenSide,
 		blackCanCastleKingSide,
 		blackCanCastleQueenSide,
-		!state.ActiveColor,
-		enPassantSquare,
 	}
+	state.ActiveColor = !state.ActiveColor
+	state.EnPassantPosition = enPassantSquare
 }
 
-func (state State) UndoMove(move Move, whiteCastleQ bool, whiteCastleK bool, blackCastleQ bool, blackCastleK bool, enPassantSquare PositionOpt) State {
-	return State{
-		state.Board.UndoMove(move),
-		whiteCastleK,
-		whiteCastleQ,
-		blackCastleK,
-		blackCastleQ,
-		!state.ActiveColor,
-		enPassantSquare,
-	}
+func (state *State) UndoMove(move Move, castlingRights CastlingRights, enPassantSquare PositionOpt) {
+	state.Board.UndoMove(move)
+	state.CastlingRights = castlingRights
+	state.ActiveColor = !state.ActiveColor
+	state.EnPassantPosition = enPassantSquare
 }

@@ -51,7 +51,7 @@ func main() {
 			move = engine.ChooseMove(game.State, game.PossibleMoves)
 		}
 
-		game, err = game.DoMove(move)
+		err = game.DoMove(move)
 		if err != nil {
 			fmt.Println(err.Error())
 			return

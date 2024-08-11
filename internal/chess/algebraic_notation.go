@@ -26,13 +26,13 @@ func (move Move) ToAlgebraicNotation(state State) (AlgebraicNotation, error) {
 	}
 
 	// Check and mate
-	updatedState := state.DoMove(move)
-	isInCheck, err := isInCheck(updatedState.Board, updatedState.ActiveColor)
+	state.DoMove(move)
+	isInCheck, err := state.Board.isInCheck(state.ActiveColor)
 	if err != nil {
 		return AlgebraicNotation(baseString), err
 	}
 	if isInCheck {
-		moves, err := GenerateAllMoves(updatedState)
+		moves, err := state.GenerateAllMoves()
 		if err != nil {
 			return AlgebraicNotation(baseString), err
 		}
@@ -215,7 +215,7 @@ func (move Move) getAlgebraicNotationCore(board Board) (string, error) {
 		base := "R"
 
 		// Disambiguate and get core
-		visiblePositions := getDirectionalVision(board, move.End, rookDirections)
+		visiblePositions := board.getDirectionalVision(move.End, rookDirections)
 		core, err := getPositionalAlgebraicNotation(board, piece, move, visiblePositions[:])
 		if err != nil {
 			return "", err
@@ -239,7 +239,7 @@ func (move Move) getAlgebraicNotationCore(board Board) (string, error) {
 		base := "B"
 
 		// Disambiguate and get core
-		visiblePositions := getDirectionalVision(board, move.End, bishopDirections)
+		visiblePositions := board.getDirectionalVision(move.End, bishopDirections)
 		core, err := getPositionalAlgebraicNotation(board, piece, move, visiblePositions[:])
 		if err != nil {
 			return "", err
@@ -251,8 +251,8 @@ func (move Move) getAlgebraicNotationCore(board Board) (string, error) {
 		base := "Q"
 
 		// Disambiguate and get core
-		bishopVisions := getDirectionalVision(board, move.End, bishopDirections)
-		rookVisions := getDirectionalVision(board, move.End, rookDirections)
+		bishopVisions := board.getDirectionalVision(move.End, bishopDirections)
+		rookVisions := board.getDirectionalVision(move.End, rookDirections)
 		visiblePositions := bishopVisions[:]
 		visiblePositions = append(visiblePositions, rookVisions[:]...)
 		core, err := getPositionalAlgebraicNotation(board, piece, move, visiblePositions)
@@ -361,7 +361,7 @@ func findStartPosition(piece Piece, state State, end Position, hintX, hintY int8
 			return Position{end.X + (2 * searchDirection), end.Y}, nil
 		}
 	case WhiteRook, BlackRook:
-		rookVisions := getDirectionalVision(state.Board, end, rookDirections)
+		rookVisions := state.Board.getDirectionalVision(end, rookDirections)
 		start, err := findStartPositionForVisions(piece, state.Board, hintX, hintY, rookVisions[:])
 		if err != nil {
 			return Position{}, err
@@ -375,15 +375,15 @@ func findStartPosition(piece Piece, state State, end Position, hintX, hintY int8
 		}
 		return start, nil
 	case WhiteBishop, BlackBishop:
-		bishopVisions := getDirectionalVision(state.Board, end, bishopDirections)
+		bishopVisions := state.Board.getDirectionalVision(end, bishopDirections)
 		start, err := findStartPositionForVisions(piece, state.Board, hintX, hintY, bishopVisions[:])
 		if err != nil {
 			return Position{}, err
 		}
 		return start, nil
 	case WhiteQueen, BlackQueen:
-		rookVisions := getDirectionalVision(state.Board, end, rookDirections)
-		bishopVisions := getDirectionalVision(state.Board, end, bishopDirections)
+		rookVisions := state.Board.getDirectionalVision(end, rookDirections)
+		bishopVisions := state.Board.getDirectionalVision(end, bishopDirections)
 		visions := rookVisions[:]
 		visions = append(visions, bishopVisions[:]...)
 		start, err := findStartPositionForVisions(piece, state.Board, hintX, hintY, visions)
@@ -392,7 +392,7 @@ func findStartPosition(piece Piece, state State, end Position, hintX, hintY int8
 		}
 		return start, nil
 	case WhiteKing, BlackKing:
-		start, err := findKing(state.Board, state.ActiveColor)
+		start, err := state.Board.findKing(state.ActiveColor)
 		if err != nil {
 			return Position{}, err
 		}
