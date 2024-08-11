@@ -81,3 +81,15 @@ func (state State) DoMove(move Move) State {
 		enPassantSquare,
 	}
 }
+
+func (state State) UndoMove(move Move, whiteCastleQ bool, whiteCastleK bool, blackCastleQ bool, blackCastleK bool, enPassantSquare PositionOpt) State {
+	return State{
+		state.Board.UndoMove(move),
+		whiteCastleK,
+		whiteCastleQ,
+		blackCastleK,
+		blackCastleQ,
+		!state.ActiveColor,
+		enPassantSquare,
+	}
+}

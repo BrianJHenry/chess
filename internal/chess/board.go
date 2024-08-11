@@ -109,6 +109,37 @@ func (board Board) DoMove(move Move) Board {
 	return board
 }
 
+func (board Board) UndoMove(move Move) Board {
+	piece := board[move.End.X][move.End.Y]
+
+	switch move.Flag {
+	case None:
+		board[move.Start.X][move.Start.Y] = piece
+		board[move.End.X][move.End.Y] = move.Captured
+	case EnPassant:
+		board[move.Start.X][move.Start.Y] = piece
+		board[move.Start.X][move.End.Y] = move.Captured
+		board[move.End.X][move.End.Y] = EmptySquare
+	case QueenSideCastle:
+		queenSideRook := getRookColorForKing(piece)
+		board[move.Start.X][4] = piece
+		board[move.Start.X][3] = EmptySquare
+		board[move.Start.X][2] = EmptySquare
+		board[move.Start.X][0] = queenSideRook
+	case KingSideCastle:
+		kingSideRook := getRookColorForKing(piece)
+		board[move.Start.X][4] = EmptySquare
+		board[move.Start.X][5] = kingSideRook
+		board[move.Start.X][6] = piece
+		board[move.Start.X][7] = EmptySquare
+	case PromoteToQueen, PromoteToRook, PromoteToBishop, PromoteToKnight:
+		board[move.Start.X][move.Start.Y] = getSameColorPawn(board[move.End.X][move.End.Y])
+		board[move.End.X][move.End.Y] = move.Captured
+	}
+
+	return board
+}
+
 // GetSquare returns the piece at the position.
 func (board Board) GetSquare(position Position) Piece {
 	return board[position.X][position.Y]

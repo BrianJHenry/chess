@@ -97,3 +97,13 @@ func getEnemyPawnColor(color Color) Piece {
 		return BlackPawn
 	}
 }
+
+func getSameColorPawn(piece Piece) Piece {
+	if piece < 0 {
+		return WhitePawn
+	} else if piece > 0 {
+		return BlackPawn
+	} else {
+		return EmptySquare
+	}
+}
